@@ -247,11 +247,12 @@ import { World, StarportType } from '../models/world';
     }
 
     .hex-map-container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 2rem auto;
       padding: 0 1rem;
       display: flex;
       gap: 2rem;
+      align-items: flex-start;
     }
 
     .hex-map {
@@ -274,11 +275,13 @@ import { World, StarportType } from '../models/world';
 
     .world-detail-panel {
       width: 400px;
+      min-width: 400px;
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      max-height: 600px;
+      max-height: 700px;
       overflow-y: auto;
+      flex-shrink: 0;
     }
 
     .panel-header {
@@ -450,8 +453,8 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   selectedHex: SectorHex | null = null;
   
   // Canvas properties
-  canvasWidth = 1200;
-  canvasHeight = 800;
+  canvasWidth = 1100;
+  canvasHeight = 750;
   private hexRadius = 32;
   private hoveredHexIndex = -1;
   
@@ -494,10 +497,8 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   ngAfterViewInit(): void {
     if (this.canvasRef?.nativeElement) {
       this.ctx = this.canvasRef.nativeElement.getContext('2d')!;
-      console.log('Canvas context initialized, forcing redraw');
-      // Force immediate redraw
+      // Draw once canvas is ready
       setTimeout(() => this.drawSubsector(), 0);
-      setTimeout(() => this.drawSubsector(), 100);
     }
   }
 
@@ -596,8 +597,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     // Clear canvas
     this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
     
-    // Debug: log to console to verify this is being called
-    console.log('Drawing subsector with hexRadius:', this.hexRadius, 'hexWidth:', this.hexWidth, 'hexHeight:', this.hexHeight);
+    // Debug: log removed now that we know it's working
     
     // Draw trade lanes first (behind hexes)
     this.drawTradeLanes();
@@ -729,6 +729,17 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
               const pos1 = this.getCanvasHexPosition(i);
               const pos2 = this.getCanvasHexPosition(j);
               
+              // Calculate direction vector and shorten lines to go inside hexes
+              const dx = pos2.x - pos1.x;
+              const dy = pos2.y - pos1.y;
+              const length = Math.sqrt(dx * dx + dy * dy);
+              const inset = 15; // Distance to move inside hex
+              
+              const startX = pos1.x + (dx / length) * inset;
+              const startY = pos1.y + (dy / length) * inset;
+              const endX = pos2.x - (dx / length) * inset;
+              const endY = pos2.y - (dy / length) * inset;
+              
               const jumpDistance = this.calculateJumpDistance(i, j);
               if (jumpDistance > 1) {
                 this.ctx.setLineDash([5, 5]);
@@ -737,8 +748,8 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
               }
               
               this.ctx.beginPath();
-              this.ctx.moveTo(pos1.x, pos1.y);
-              this.ctx.lineTo(pos2.x, pos2.y);
+              this.ctx.moveTo(startX, startY);
+              this.ctx.lineTo(endX, endY);
               this.ctx.stroke();
             }
           }
@@ -763,8 +774,8 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     // - Vertical spacing: exact distance for edge-to-edge contact
     // - Every other row is offset horizontally by half the horizontal spacing
     
-    const horizontalSpacing = this.hexWidth + 20; // MUCH larger gap - should be very obvious
-    const verticalSpacing = this.hexHeight + 10; // MUCH larger vertical gap too
+    const horizontalSpacing = this.hexWidth + 15; // Larger gaps for clearer space lanes
+    const verticalSpacing = this.hexHeight * 0.9; // More vertical spacing too
     
     const x = offsetX + col * horizontalSpacing + (row % 2) * (horizontalSpacing / 2);
     const y = offsetY + row * verticalSpacing;
