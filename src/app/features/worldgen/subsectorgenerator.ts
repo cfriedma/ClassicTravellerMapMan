@@ -69,12 +69,12 @@ export class SubsectorGenerator {
                     hasScoutBase = false;
                     break;
                 }
-                planetSize = createPlanetSize(Math.min(DiceUtils.standardRoll(-2), 0));
+                planetSize = createPlanetSize(Math.max(DiceUtils.standardRoll(-2), 0));
                 if(planetSize.key === 0) {
                     planetAtmosphere = createPlanetAtmosphere(0);
                 }
                 else {
-                    planetAtmosphere = createPlanetAtmosphere(Math.min(DiceUtils.standardRoll(planetSize.key - 7), 0));
+                    planetAtmosphere = createPlanetAtmosphere(Math.max(DiceUtils.standardRoll(planetSize.key - 7), 0));
                 }
                 if(planetAtmosphere.key === 0 || planetAtmosphere.key === 1) {
                     planetHydrographics = createPlanetHydrographics(0);
@@ -84,11 +84,11 @@ export class SubsectorGenerator {
                     if(planetAtmosphere.key === 0 || planetAtmosphere.key === 1 || planetAtmosphere.key > 9) {
                         hydrographicsModifier -= 4;
                     }
-                    planetHydrographics = createPlanetHydrographics(Math.min(DiceUtils.standardRoll(hydrographicsModifier), 0));
+                    planetHydrographics = createPlanetHydrographics(Math.max(DiceUtils.standardRoll(hydrographicsModifier), 0));
                 }
-                planetPopulation = createPlanetPopulation(Math.min(DiceUtils.standardRoll(-2), 0));
-                planetGovernment = createPlanetGovernment(Math.min(DiceUtils.standardRoll(planetPopulation.key - 7), 0));
-                planetLawLevel = createPlanetLawLevel(Math.min(DiceUtils.standardRoll(planetGovernment.key - 7), 0));
+                planetPopulation = createPlanetPopulation(Math.max(DiceUtils.standardRoll(-2), 0));
+                planetGovernment = createPlanetGovernment(Math.max(DiceUtils.standardRoll(planetPopulation.key - 7), 0));
+                planetLawLevel = createPlanetLawLevel(Math.max(DiceUtils.standardRoll(planetGovernment.key - 7), 0));
                 let techLevelModifier = 0;
                 switch(starportType)
                 {
@@ -140,7 +140,7 @@ export class SubsectorGenerator {
                     case 13: techLevelModifier -= 2; break;
                     default: break;
                 }
-                const planetTechLevel = Math.min(DiceUtils.standardRoll(techLevelModifier), 0);
+                const planetTechLevel = Math.max(DiceUtils.standardRoll(techLevelModifier), 0);
                 const drugLegality = DiceUtils.rollStandardCheck(planetLawLevel.key);
                 let hasPsionicInstitute: boolean;
                 if(planetPopulation.key > 9) {
