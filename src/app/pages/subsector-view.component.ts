@@ -130,7 +130,11 @@ import { World, StarportType } from '../models/world';
               
               <div class="detail-item" *ngIf="selectedHex.world.spaceLanes.length > 0">
                 <label>Trade Routes:</label>
-                <span>{{ selectedHex.world.spaceLanes.length }} connections</span>
+                <div class="trade-routes-list">
+                  <div *ngFor="let route of getTradeRouteDetails(selectedHex.world)" class="trade-route">
+                    {{ route.destination }} (Jump-{{ route.distance }})
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -363,6 +367,20 @@ import { World, StarportType } from '../models/world';
     .base-tag.psionic {
       background: #6f42c1;
       color: white;
+    }
+
+    .trade-routes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .trade-route {
+      background: #f8f9fa;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      border-left: 3px solid #2196f3;
     }
 
     .starport-A { color: #28a745; font-weight: bold; }
@@ -740,12 +758,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
               const endX = pos2.x - (dx / length) * inset;
               const endY = pos2.y - (dy / length) * inset;
               
-              const jumpDistance = this.calculateJumpDistance(i, j);
-              if (jumpDistance > 1) {
-                this.ctx.setLineDash([5, 5]);
-              } else {
-                this.ctx.setLineDash([]);
-              }
+              this.ctx.setLineDash([]);
               
               this.ctx.beginPath();
               this.ctx.moveTo(startX, startY);
@@ -831,6 +844,27 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
       return (value - 10 + 10).toString(16).toUpperCase();
     }
     return value.toString();
+  }
+
+  getTradeRouteDetails(world: any): { destination: string, distance: number }[] {
+    if (!world.spaceLanes || !this.subsectorData) return [];
+    
+    return world.spaceLanes.map((connectedHex: any) => {
+      const connectedIndex = this.subsectorData!.subsector.sectorHexes.indexOf(connectedHex);
+      const currentHex = this.subsectorData!.subsector.sectorHexes.find(hex => hex.world === world);
+      const currentIndex = currentHex ? this.subsectorData!.subsector.sectorHexes.indexOf(currentHex) : -1;
+      
+      if (currentIndex === -1 || connectedIndex === -1) {
+        return { destination: 'Unknown', distance: 0 };
+      }
+      
+      const distance = this.calculateJumpDistance(currentIndex, connectedIndex);
+      const destination = this.getHexCoordinates(connectedIndex);
+      
+      return { destination, distance };
+    }).sort((a: { destination: string, distance: number }, b: { destination: string, distance: number }) => 
+      a.distance - b.distance || a.destination.localeCompare(b.destination)
+    );
   }
 
   getStarportDescription(starportType: StarportType): string {
