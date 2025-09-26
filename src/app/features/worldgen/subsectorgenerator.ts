@@ -88,7 +88,7 @@ export class SubsectorGenerator {
                 }
                 planetPopulation = createPlanetPopulation(Math.max(DiceUtils.standardRoll(-2), 0));
                 planetGovernment = createPlanetGovernment(Math.max(DiceUtils.standardRoll(planetPopulation.key - 7), 0));
-                planetLawLevel = createPlanetLawLevel(Math.max(DiceUtils.standardRoll(planetGovernment.key - 7), 0));
+                planetLawLevel = createPlanetLawLevel(Math.min(Math.max(DiceUtils.standardRoll(planetGovernment.key - 7), 0), 9));
                 let techLevelModifier = 0;
                 switch(starportType)
                 {

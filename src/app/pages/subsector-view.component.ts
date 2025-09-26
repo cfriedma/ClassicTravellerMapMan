@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
@@ -54,37 +54,14 @@ import { World, StarportType } from '../models/world';
       <!-- Hex Map -->
       <div class="hex-map-container">
         <div class="hex-map">
-          <div class="hex-grid">
-            <div 
-              *ngFor="let row of getHexRows()" 
-              class="hex-row"
-            >
-              <div 
-                *ngFor="let hexData of row.hexes; let colIndex = index"
-                class="hex-cell"
-                [class.has-world]="hexData.hex.world"
-                [class.selected]="selectedHexIndex === hexData.index"
-                (click)="selectHex(hexData.index)"
-              >
-                <div class="hex-content">
-                  <div class="hex-coordinates">{{ getHexCoordinates(hexData.index) }}</div>
-                  <div *ngIf="hexData.hex.world" class="world-info">
-                    <div class="starport">{{ hexData.hex.world.starportType }}</div>
-                    <div class="world-stats">
-                      {{ hexData.hex.world.planetSize.key }}{{ hexData.hex.world.planetAtmosphere.key }}{{ hexData.hex.world.planetHydrographics.key }}
-                    </div>
-                    <div class="world-gov">
-                      {{ hexData.hex.world.planetPopulation.key }}{{ hexData.hex.world.planetGovernment.key }}{{ hexData.hex.world.planetLawLevel.key }}-{{ hexData.hex.world.planetTechLevel }}
-                    </div>
-                    <div class="bases" *ngIf="hexData.hex.world.hasNavalBase || hexData.hex.world.hasScoutBase">
-                      <span *ngIf="hexData.hex.world.hasNavalBase" class="naval-base">N</span>
-                      <span *ngIf="hexData.hex.world.hasScoutBase" class="scout-base">S</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <canvas 
+            #hexCanvas
+            class="hex-canvas"
+            [width]="canvasWidth"
+            [height]="canvasHeight"
+            (click)="onCanvasClick($event)"
+            (mousemove)="onCanvasMouseMove($event)"
+          ></canvas>
         </div>
 
         <!-- World Detail Panel -->
@@ -283,121 +260,16 @@ import { World, StarportType } from '../models/world';
       border-radius: 12px;
       padding: 2rem;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-
-    .hex-grid {
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      gap: -5px;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
     }
 
-    .hex-row {
-      display: flex;
-      gap: 2px;
-    }
-
-    .hex-row:nth-child(even) {
-      margin-left: 40px;
-    }
-
-    .hex-cell {
-      width: 70px;
-      height: 70px;
-      position: relative;
+    .hex-canvas {
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
       cursor: pointer;
-      transition: all 0.3s ease;
-      margin: 2px;
-    }
-
-    .hex-cell::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #f8f9fa;
-      border: 2px solid #e1e5e9;
-      clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
-      transition: all 0.3s ease;
-    }
-
-    .hex-cell:hover::before {
-      border-color: #667eea;
-      transform: scale(1.05);
-    }
-
-    .hex-cell.has-world::before {
-      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-      border-color: #2196f3;
-    }
-
-    .hex-cell.selected::before {
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
-      transform: scale(1.05);
-    }
-
-    .hex-content {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 8px;
-      font-size: 0.6rem;
-      z-index: 1;
-      text-align: center;
-    }
-
-    .hex-coordinates {
-      font-weight: bold;
-      color: #666;
-      font-size: 0.6rem;
-    }
-
-    .world-info {
-      text-align: center;
-    }
-
-    .starport {
-      font-weight: bold;
-      font-size: 1rem;
-      margin-bottom: 0.2rem;
-    }
-
-    .world-stats, .world-gov {
-      font-family: 'Courier New', monospace;
-      font-size: 0.6rem;
-      line-height: 1.2;
-    }
-
-    .bases {
-      display: flex;
-      justify-content: center;
-      gap: 0.2rem;
-      margin-top: 0.2rem;
-    }
-
-    .naval-base, .scout-base {
-      background: #dc3545;
-      color: white;
-      padding: 0.1rem 0.3rem;
-      border-radius: 3px;
-      font-size: 0.5rem;
-      font-weight: bold;
-    }
-
-    .scout-base {
-      background: #28a745;
+      background: #fafafa;
     }
 
     .world-detail-panel {
@@ -568,12 +440,22 @@ import { World, StarportType } from '../models/world';
     }
   `]
 })
-export class SubsectorViewComponent implements OnInit, OnDestroy {
+export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('hexCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   private destroy$ = new Subject<void>();
+  private ctx!: CanvasRenderingContext2D;
   
   subsectorData: SubsectorData | null = null;
   selectedHexIndex = -1;
   selectedHex: SectorHex | null = null;
+  
+  // Canvas properties
+  canvasWidth = 1000;
+  canvasHeight = 700;
+  private hexRadius = 35;
+  private hexWidth = this.hexRadius * Math.sqrt(3); // Width for flat-top hex
+  private hexHeight = this.hexRadius * 2; // Height for flat-top hex
+  private hoveredHexIndex = -1;
   
   // Statistics
   worldCount = 0;
@@ -602,10 +484,20 @@ export class SubsectorViewComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  ngAfterViewInit(): void {
+    if (this.canvasRef?.nativeElement) {
+      this.ctx = this.canvasRef.nativeElement.getContext('2d')!;
+      this.drawSubsector();
+    }
+  }
+
   private loadSubsector(id: string): void {
     this.subsectorData = this.subsectorManager.getSubsector(id);
     if (this.subsectorData) {
       this.calculateStatistics();
+      if (this.ctx) {
+        this.drawSubsector();
+      }
     }
   }
 
@@ -650,11 +542,237 @@ export class SubsectorViewComponent implements OnInit, OnDestroy {
   selectHex(index: number): void {
     this.selectedHexIndex = index;
     this.selectedHex = this.subsectorData?.subsector.sectorHexes[index] || null;
+    this.drawSubsector(); // Redraw to show selection
   }
 
   clearSelection(): void {
     this.selectedHexIndex = -1;
     this.selectedHex = null;
+    this.drawSubsector(); // Redraw to clear selection
+  }
+
+  onCanvasClick(event: MouseEvent): void {
+    if (!this.subsectorData) return;
+    
+    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    const hexIndex = this.getHexAtPosition(x, y);
+    if (hexIndex !== -1) {
+      this.selectHex(hexIndex);
+    } else {
+      this.clearSelection();
+    }
+  }
+
+  onCanvasMouseMove(event: MouseEvent): void {
+    if (!this.subsectorData) return;
+    
+    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    const hexIndex = this.getHexAtPosition(x, y);
+    if (hexIndex !== this.hoveredHexIndex) {
+      this.hoveredHexIndex = hexIndex;
+      this.drawSubsector(); // Redraw to show hover
+    }
+  }
+
+  private drawSubsector(): void {
+    if (!this.ctx || !this.subsectorData) return;
+    
+    // Clear canvas
+    this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+    
+    // Draw trade lanes first (behind hexes)
+    this.drawTradeLanes();
+    
+    // Draw all hexes
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 10; col++) {
+        const index = row * 10 + col;
+        const hex = this.subsectorData.subsector.sectorHexes[index];
+        const position = this.getCanvasHexPosition(index);
+        
+        this.drawHex(position.x, position.y, index, hex);
+      }
+    }
+  }
+
+  private drawHex(x: number, y: number, index: number, hex: any): void {
+    if (!this.ctx) return;
+    
+    const isSelected = index === this.selectedHexIndex;
+    const isHovered = index === this.hoveredHexIndex;
+    const hasWorld = hex.world !== null;
+    
+    // Draw flat-top hexagon shape
+    this.ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      // Rotate by 30 degrees (π/6) to get flat-top orientation
+      const angle = (Math.PI / 3) * i + (Math.PI / 6);
+      const hx = x + this.hexRadius * Math.cos(angle);
+      const hy = y + this.hexRadius * Math.sin(angle);
+      
+      if (i === 0) {
+        this.ctx.moveTo(hx, hy);
+      } else {
+        this.ctx.lineTo(hx, hy);
+      }
+    }
+    this.ctx.closePath();
+    
+    // Fill hexagon
+    if (hasWorld) {
+      this.ctx.fillStyle = '#e3f2fd';
+    } else {
+      this.ctx.fillStyle = '#f8f9fa';
+    }
+    this.ctx.fill();
+    
+    // Stroke hexagon
+    if (isSelected) {
+      this.ctx.strokeStyle = '#667eea';
+      this.ctx.lineWidth = 3;
+    } else if (isHovered) {
+      this.ctx.strokeStyle = '#667eea';
+      this.ctx.lineWidth = 2;
+    } else if (hasWorld) {
+      this.ctx.strokeStyle = '#2196f3';
+      this.ctx.lineWidth = 2;
+    } else {
+      this.ctx.strokeStyle = '#e1e5e9';
+      this.ctx.lineWidth = 1;
+    }
+    this.ctx.stroke();
+    
+    // Draw hex coordinates
+    this.ctx.fillStyle = '#666';
+    this.ctx.font = '10px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'top';
+    const coords = this.getHexCoordinates(index);
+    this.ctx.fillText(coords, x, y - this.hexRadius + 5);
+    
+    // Draw world info if present
+    if (hasWorld) {
+      this.drawWorldInfo(x, y, hex.world);
+    }
+  }
+
+  private drawWorldInfo(x: number, y: number, world: any): void {
+    if (!this.ctx) return;
+    
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    
+    // Starport
+    this.ctx.fillStyle = '#000';
+    this.ctx.font = 'bold 14px Arial';
+    this.ctx.fillText(world.starportType, x, y - 8);
+    
+    // UWP line 1
+    this.ctx.font = '8px Courier New';
+    const uwp1 = `${this.formatHex(world.planetSize.key)}${this.formatHex(world.planetAtmosphere.key)}${this.formatHex(world.planetHydrographics.key)}`;
+    this.ctx.fillText(uwp1, x, y + 4);
+    
+    // UWP line 2
+    const uwp2 = `${this.formatHex(world.planetPopulation.key)}${this.formatHex(world.planetGovernment.key)}${this.formatHex(world.planetLawLevel.key)}-${this.formatHex(world.planetTechLevel)}`;
+    this.ctx.fillText(uwp2, x, y + 14);
+    
+    // Bases
+    if (world.hasNavalBase || world.hasScoutBase) {
+      let baseText = '';
+      if (world.hasNavalBase) baseText += 'N';
+      if (world.hasScoutBase) baseText += 'S';
+      
+      this.ctx.font = 'bold 8px Arial';
+      this.ctx.fillStyle = world.hasNavalBase ? '#dc3545' : '#28a745';
+      this.ctx.fillText(baseText, x, y + 24);
+    }
+  }
+
+  private drawTradeLanes(): void {
+    if (!this.ctx || !this.subsectorData) return;
+    
+    const processedPairs = new Set<string>();
+    
+    this.ctx.strokeStyle = '#2196f3';
+    this.ctx.lineWidth = 2;
+    this.ctx.globalAlpha = 0.6;
+    
+    for (let i = 0; i < this.subsectorData.subsector.sectorHexes.length; i++) {
+      const hex = this.subsectorData.subsector.sectorHexes[i];
+      if (hex.world && hex.world.spaceLanes) {
+        for (const connectedHex of hex.world.spaceLanes) {
+          const j = this.subsectorData.subsector.sectorHexes.indexOf(connectedHex);
+          if (j !== -1) {
+            const pairKey = i < j ? `${i}-${j}` : `${j}-${i}`;
+            if (!processedPairs.has(pairKey)) {
+              processedPairs.add(pairKey);
+              
+              const pos1 = this.getCanvasHexPosition(i);
+              const pos2 = this.getCanvasHexPosition(j);
+              
+              const jumpDistance = this.calculateJumpDistance(i, j);
+              if (jumpDistance > 1) {
+                this.ctx.setLineDash([5, 5]);
+              } else {
+                this.ctx.setLineDash([]);
+              }
+              
+              this.ctx.beginPath();
+              this.ctx.moveTo(pos1.x, pos1.y);
+              this.ctx.lineTo(pos2.x, pos2.y);
+              this.ctx.stroke();
+            }
+          }
+        }
+      }
+    }
+    
+    this.ctx.setLineDash([]);
+    this.ctx.globalAlpha = 1.0;
+  }
+
+  private getCanvasHexPosition(index: number): { x: number, y: number } {
+    const col = index % 10;
+    const row = Math.floor(index / 10);
+    
+    const offsetX = 80; // Left margin
+    const offsetY = 80; // Top margin
+    
+    // Correct hex grid calculations for flat-top hexagons
+    // For flat-top hexes arranged in rows and columns:
+    // - Horizontal spacing: 3/4 of hex width between centers
+    // - Vertical spacing: full hex height * 3/4 between rows
+    // - Every other row is offset horizontally by half the horizontal spacing
+    
+    const horizontalSpacing = this.hexWidth * 0.75; // Distance between hex centers horizontally
+    const verticalSpacing = this.hexHeight * 0.75;  // Distance between hex centers vertically
+    
+    const x = offsetX + col * horizontalSpacing + (row % 2) * (horizontalSpacing / 2);
+    const y = offsetY + row * verticalSpacing;
+    
+    return { x, y };
+  }
+
+  private getHexAtPosition(canvasX: number, canvasY: number): number {
+    if (!this.subsectorData) return -1;
+    
+    // Check each hex to see if the point is inside
+    for (let i = 0; i < 80; i++) {
+      const pos = this.getCanvasHexPosition(i);
+      const distance = Math.sqrt(Math.pow(canvasX - pos.x, 2) + Math.pow(canvasY - pos.y, 2));
+      
+      if (distance <= this.hexRadius) {
+        return i;
+      }
+    }
+    
+    return -1;
   }
 
   getHexColumn(index: number): number {
@@ -665,30 +783,30 @@ export class SubsectorViewComponent implements OnInit, OnDestroy {
     return Math.floor(index / 10) + 1;
   }
 
-  getHexRows(): { hexes: { hex: any, index: number }[] }[] {
-    if (!this.subsectorData) return [];
+  private calculateJumpDistance(index1: number, index2: number): number {
+    const col1 = index1 % 10;
+    const row1 = Math.floor(index1 / 10);
+    const col2 = index2 % 10;
+    const row2 = Math.floor(index2 / 10);
     
-    const rows: { hexes: { hex: any, index: number }[] }[] = [];
-    
-    for (let row = 0; row < 8; row++) {
-      const hexes: { hex: any, index: number }[] = [];
-      for (let col = 0; col < 10; col++) {
-        const index = row * 10 + col;
-        hexes.push({
-          hex: this.subsectorData.subsector.sectorHexes[index],
-          index: index
-        });
-      }
-      rows.push({ hexes });
-    }
-    
-    return rows;
+    // Simple distance calculation (could be more sophisticated for hex grids)
+    const dx = Math.abs(col2 - col1);
+    const dy = Math.abs(row2 - row1);
+    return Math.max(dx, dy);
   }
 
   getHexCoordinates(index: number): string {
     const col = (index % 10) + 1;
     const row = Math.floor(index / 10) + 1;
     return `${col.toString().padStart(2, '0')}${row.toString().padStart(2, '0')}`;
+  }
+
+  formatHex(value: number): string {
+    // Convert values 10+ to hex digits (A, B, C, etc.) for compact display
+    if (value >= 10) {
+      return (value - 10 + 10).toString(16).toUpperCase();
+    }
+    return value.toString();
   }
 
   getStarportDescription(starportType: StarportType): string {
