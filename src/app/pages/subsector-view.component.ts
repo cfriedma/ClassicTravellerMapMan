@@ -450,12 +450,19 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   selectedHex: SectorHex | null = null;
   
   // Canvas properties
-  canvasWidth = 1000;
-  canvasHeight = 700;
-  private hexRadius = 35;
-  private hexWidth = this.hexRadius * Math.sqrt(3); // Width for flat-top hex
-  private hexHeight = this.hexRadius * 2; // Height for flat-top hex
+  canvasWidth = 1200;
+  canvasHeight = 800;
+  private hexRadius = 32;
   private hoveredHexIndex = -1;
+  
+  // Calculated properties - use getters to ensure they update
+  get hexWidth(): number {
+    return this.hexRadius * Math.sqrt(3); // Width for flat-top hex
+  }
+  
+  get hexHeight(): number {
+    return this.hexRadius * 2; // Height for flat-top hex
+  }
   
   // Statistics
   worldCount = 0;
@@ -487,7 +494,10 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   ngAfterViewInit(): void {
     if (this.canvasRef?.nativeElement) {
       this.ctx = this.canvasRef.nativeElement.getContext('2d')!;
-      this.drawSubsector();
+      console.log('Canvas context initialized, forcing redraw');
+      // Force immediate redraw
+      setTimeout(() => this.drawSubsector(), 0);
+      setTimeout(() => this.drawSubsector(), 100);
     }
   }
 
@@ -585,6 +595,9 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     
     // Clear canvas
     this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+    
+    // Debug: log to console to verify this is being called
+    console.log('Drawing subsector with hexRadius:', this.hexRadius, 'hexWidth:', this.hexWidth, 'hexHeight:', this.hexHeight);
     
     // Draw trade lanes first (behind hexes)
     this.drawTradeLanes();
@@ -746,12 +759,12 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     
     // Correct hex grid calculations for flat-top hexagons
     // For flat-top hexes arranged in rows and columns:
-    // - Horizontal spacing: 3/4 of hex width between centers
-    // - Vertical spacing: full hex height * 3/4 between rows
+    // - Horizontal spacing: exact distance to avoid overlap
+    // - Vertical spacing: exact distance for edge-to-edge contact
     // - Every other row is offset horizontally by half the horizontal spacing
     
-    const horizontalSpacing = this.hexWidth * 0.75; // Distance between hex centers horizontally
-    const verticalSpacing = this.hexHeight * 0.75;  // Distance between hex centers vertically
+    const horizontalSpacing = this.hexWidth + 20; // MUCH larger gap - should be very obvious
+    const verticalSpacing = this.hexHeight + 10; // MUCH larger vertical gap too
     
     const x = offsetX + col * horizontalSpacing + (row % 2) * (horizontalSpacing / 2);
     const y = offsetY + row * verticalSpacing;
