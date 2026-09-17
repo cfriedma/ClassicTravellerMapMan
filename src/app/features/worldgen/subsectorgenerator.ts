@@ -1,6 +1,6 @@
 import { SectorHex } from "src/app/models/sectorhex";
 import { Subsector } from "src/app/models/subsector";
-import { World, StarportType, PlanetProperty, createPlanetSize, createPlanetAtmosphere, createPlanetHydrographics, createPlanetPopulation, createPlanetGovernment, createPlanetLawLevel } from "src/app/models/world";
+import { World, StarportType, PlanetProperty, createPlanetSize, createPlanetAtmosphere, createPlanetHydrographics, createPlanetPopulation, createPlanetGovernment, createPlanetLawLevel, psionicPunishmentFromRoll } from "src/app/models/world";
 import { DiceUtils } from "src/app/shared/dice-utils";
 
 export class SubsectorGenerator {
@@ -18,6 +18,9 @@ export class SubsectorGenerator {
             throw new Error("Subsector not initialized");
         }
         for (let location of locations) {
+            if (!Number.isInteger(location) || location < 0 || location >= this.subsector.sectorHexes.length) {
+                throw new RangeError(`Invalid subsector hex index: ${location}`);
+            }
             this.subsector.sectorHexes[location].worldGenerationChanceModifier += modifier;
         }
     }
@@ -27,7 +30,13 @@ export class SubsectorGenerator {
             throw new Error("Subsector not initialized");
         }
         for (let hex of this.subsector.sectorHexes) {
+            // Generation may be run more than once on the same subsector.
+            hex.world = null;
+            hex.hasGasGiant = false;
+
             if (DiceUtils.rollSingleDiceCheck(4, hex.worldGenerationChanceModifier)) {
+                // Classic Traveller systems contain a gas giant on a roll of 10 or less.
+                hex.hasGasGiant = DiceUtils.standardRoll() <= 10;
                 const starportRoll = DiceUtils.standardRoll();
                 let starportType: StarportType = StarportType.X;
                 let hasNavalBase: boolean = false;
@@ -81,10 +90,12 @@ export class SubsectorGenerator {
                 }
                 else {
                     let hydrographicsModifier = planetSize.key - 7;
-                    if(planetAtmosphere.key === 0 || planetAtmosphere.key === 1 || planetAtmosphere.key > 9) {
+                    if(planetAtmosphere.key === 2 || planetAtmosphere.key === 3 || planetAtmosphere.key > 9) {
                         hydrographicsModifier -= 4;
                     }
-                    planetHydrographics = createPlanetHydrographics(Math.max(DiceUtils.standardRoll(hydrographicsModifier), 0));
+                    planetHydrographics = createPlanetHydrographics(
+                        Math.min(Math.max(DiceUtils.standardRoll(hydrographicsModifier), 0), 10)
+                    );
                 }
                 planetPopulation = createPlanetPopulation(Math.max(DiceUtils.standardRoll(-2), 0));
                 planetGovernment = createPlanetGovernment(Math.max(DiceUtils.standardRoll(planetPopulation.key - 7), 0));
@@ -121,7 +132,7 @@ export class SubsectorGenerator {
                     case 14: techLevelModifier += 1; break;
                     default: break;
                 }
-                techLevelModifier += Math.min(planetHydrographics.key - 8, 0);
+                techLevelModifier += Math.max(planetHydrographics.key - 8, 0);
                 switch(planetPopulation.key) 
                 {
                     case 1:
@@ -142,14 +153,10 @@ export class SubsectorGenerator {
                 }
                 const planetTechLevel = Math.max(DiceUtils.standardRoll(techLevelModifier), 0);
                 const drugLegality = DiceUtils.rollStandardCheck(planetLawLevel.key);
-                let hasPsionicInstitute: boolean;
-                if(planetPopulation.key > 9) {
-                    hasPsionicInstitute = DiceUtils.rollStandardCheck(planetPopulation.key - 9, 11);
-                }
-                else {
-                    hasPsionicInstitute = false;
-                }
-                const world = new World(starportType, hasNavalBase, hasScoutBase, planetSize, planetAtmosphere, planetHydrographics, planetPopulation, planetGovernment, planetLawLevel, planetTechLevel, drugLegality, hasPsionicInstitute);
+                const hasPsionicInstitute = planetPopulation.key >= 9
+                    && DiceUtils.rollStandardCheck(11, planetPopulation.key - 9);
+                const psionicPunishment = psionicPunishmentFromRoll(DiceUtils.standardRoll());
+                const world = new World(starportType, hasNavalBase, hasScoutBase, planetSize, planetAtmosphere, planetHydrographics, planetPopulation, planetGovernment, planetLawLevel, planetTechLevel, drugLegality, hasPsionicInstitute, psionicPunishment);
                 hex.world = world;
             }
         }
@@ -159,6 +166,15 @@ export class SubsectorGenerator {
         if (this.subsector === undefined || this.subsector === null) {
             throw new Error("Subsector not initialized");
         }
+
+        // Rebuilding lanes should be deterministic with respect to the current
+        // worlds, not influenced by lanes left from an earlier generation pass.
+        for (const hex of this.subsector.sectorHexes) {
+            if (hex.world !== null) {
+                hex.world.spaceLanes = [];
+            }
+        }
+
         let worldToNeighborsByJumpDistance: Map<World, SectorHex[][]> = new Map();
         let existingSpaceLanes: Set<string> = new Set(); // Track existing lanes to avoid duplicates
         
@@ -192,7 +208,6 @@ export class SubsectorGenerator {
                                     // Store the space lane in both worlds
                                     hex.world.spaceLanes.push(neighborHex);
                                     neighborHex.world.spaceLanes.push(hex);
-                                    console.log(`Space lane established: ${hex.world.starportType} to ${neighborHex.world.starportType} at Jump-${jumpDistance}`);
                                 }
                             }
                         }
@@ -299,8 +314,8 @@ export class SubsectorGenerator {
         };
         
         // Create consistent key for lookup
-        const key1 = StarportType[starport1];
-        const key2 = StarportType[starport2];
+        const key1 = starport1;
+        const key2 = starport2;
         const pairKey = key1 <= key2 ? `${key1}-${key2}` : `${key2}-${key1}`;
         const fullKey = `${pairKey}-${jumpDistance}`;
         
