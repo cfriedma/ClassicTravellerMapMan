@@ -201,7 +201,8 @@ export class SubsectorManagerService {
   private serializeSubsector(subsector: Subsector): any {
     const serializedHexes = subsector.sectorHexes.map((hex, index) => {
       const hexCopy: any = {
-        worldGenerationChanceModifier: hex.worldGenerationChanceModifier
+        worldGenerationChanceModifier: hex.worldGenerationChanceModifier,
+        hasGasGiant: hex.hasGasGiant
       };
       
       if (hex.world) {
@@ -242,6 +243,9 @@ export class SubsectorManagerService {
         }
         if (hexData.worldGenerationChanceModifier !== undefined) {
           subsector.sectorHexes[i].worldGenerationChanceModifier = hexData.worldGenerationChanceModifier;
+        }
+        if (hexData.hasGasGiant !== undefined) {
+          subsector.sectorHexes[i].hasGasGiant = hexData.hasGasGiant;
         }
       }
       
