@@ -1355,7 +1355,7 @@
       "tl": 7,
       "weight": 250,
       "weightUnit": "g",
-      "notes": "Ammo weight 50g; Rds/clip 6; Length 100mm; Ammo/recharge price Cr20; Non-metallic; loaded weight 300g (prose).",
+      "notes": "Ammo weight 50g; Rds/clip 6; Length 100mm; Ammo/recharge price Cr20; loaded weight 300g (prose). Modified undetectable (non-metallic) versions are illegal at law 1+.",
       "tradeGoodTag": "Firearms",
       "tradeDie": "42",
       "tradeEntry": "Firearms",

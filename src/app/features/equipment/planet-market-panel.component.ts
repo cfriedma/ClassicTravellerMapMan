@@ -88,6 +88,10 @@ type MarketTabId = 'trade_goods' | string;
             Psi-drugs are illegal.
           </ng-template>
         </p>
+        <p class="law-banner" *ngIf="activeTab === 'weapons' || activeTab === 'ammunition'">
+          {{ world.planetLawLevel.label }}
+          <span *ngIf="world.planetLawLevel.key > 0"> Prohibitions from lower law levels also apply.</span>
+        </p>
         <p class="empty" *ngIf="visibleItems.length === 0">No items at this tech level.</p>
         <table *ngIf="visibleItems.length > 0">
           <thead>
@@ -213,8 +217,9 @@ type MarketTabId = 'trade_goods' | string;
     .badge.ok { background: #d4edda; color: #155724; }
     .badge.bad { background: #f8d7da; color: #721c24; }
     .unavailable { opacity: 0.65; }
-    .empty, .psi-banner { margin: 0 0 0.75rem; color: #555; }
+    .empty, .psi-banner, .law-banner { margin: 0 0 0.75rem; color: #555; }
     .psi-banner { background: #f3e8ff; border-left: 3px solid #6f42c1; padding: 0.6rem 0.8rem; }
+    .law-banner { background: #fff4e5; border-left: 3px solid #fd7e14; padding: 0.6rem 0.8rem; }
     @media (max-width: 768px) {
       .market-header { flex-direction: column; }
     }
@@ -327,7 +332,7 @@ export class PlanetMarketPanelComponent implements OnChanges {
   }
 
   hasLegality(item: EquipmentItem): boolean {
-    return item.category === 'drugs' || item.illegalFromLawLevel != null;
+    return item.category === 'drugs' || this.planetMarket.getIllegalFromLawLevel(item) != null;
   }
 
   isIllegal(item: EquipmentItem): boolean {

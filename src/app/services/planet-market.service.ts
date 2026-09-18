@@ -4,6 +4,7 @@ import { World } from '../models/world';
 import { EquipmentItem } from '../models/equipment';
 import { TradeGood } from '../models/trade-goods';
 import { DrugMarketState, PlanetMarketState, TradePriceResult } from '../models/planet-market';
+import { getItemIllegalFromLawLevel } from '../models/weapon-legality';
 import { EquipmentCatalogService } from './equipment-catalog.service';
 import { SubsectorManagerService } from './subsector-manager.service';
 
@@ -89,14 +90,19 @@ export class PlanetMarketService {
     return result ? result.percent : null;
   }
 
+  getIllegalFromLawLevel(item: EquipmentItem): number | null {
+    return getItemIllegalFromLawLevel(item);
+  }
+
   isIllegalByLaw(item: EquipmentItem, world: World): boolean {
-    return item.illegalFromLawLevel != null
-      && world.planetLawLevel.key >= item.illegalFromLawLevel;
+    const fromLaw = this.getIllegalFromLawLevel(item);
+    return fromLaw != null && world.planetLawLevel.key >= fromLaw;
   }
 
   getPurchasePrice(item: EquipmentItem, world: World): number | string | null {
+    const fromLaw = this.getIllegalFromLawLevel(item);
     if (this.isIllegalByLaw(item, world) && item.illegalPrice != null && item.illegalPrice !== '') {
-      const extraLaw = world.planetLawLevel.key - (item.illegalFromLawLevel ?? world.planetLawLevel.key);
+      const extraLaw = world.planetLawLevel.key - (fromLaw ?? world.planetLawLevel.key);
       if (typeof item.illegalPrice === 'number') {
         return item.illegalPrice * (1 + extraLaw);
       }
