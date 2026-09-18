@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Subsector } from '../models/subsector';
 import { World } from '../models/world';
-import { SubsectorGenerator } from '../features/worldgen/subsectorgenerator';
+import { SubsectorGenerator, ensureWorldBalkanStates } from '../features/worldgen/subsectorgenerator';
+import { SettingsService } from './settings.service';
 
 export interface SubsectorData {
   id: string;
@@ -24,7 +25,7 @@ export class SubsectorManagerService {
 
   private readonly STORAGE_KEY = 'traveller_subsectors';
 
-  constructor() {
+  constructor(private settings: SettingsService) {
     this.loadSubsectors();
   }
 
@@ -48,8 +49,12 @@ export class SubsectorManagerService {
     const generator = new SubsectorGenerator();
     
     // Initialize and generate the subsector
+    const settings = this.settings.snapshot;
     generator.initializeSubsector();
-    generator.generateWorlds();
+    generator.generateWorlds({
+      psionicsEnabled: settings.psionicsEnabled,
+      autoRollBalkanization: settings.autoRollBalkanization
+    });
     generator.generateSpaceLanes();
     
     if (!generator.subsector) {
@@ -105,6 +110,26 @@ export class SubsectorManagerService {
     if (current) {
       this.saveSubsector(current);
     }
+  }
+
+  /**
+   * Rolls balkan states for government-7 worlds that do not have them yet.
+   * Also replaces a leftover gov-7 starport state with a rolled government.
+   */
+  ensureBalkanization(subsectorData: SubsectorData | null = this.currentSubsectorSubject.value): boolean {
+    if (!subsectorData) {
+      return false;
+    }
+    let changed = false;
+    for (const hex of subsectorData.subsector.sectorHexes) {
+      if (hex.world && ensureWorldBalkanStates(hex.world)) {
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.saveSubsector(subsectorData);
+    }
+    return changed;
   }
 
   /**

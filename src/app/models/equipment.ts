@@ -17,6 +17,12 @@ export interface EquipmentItem {
     illegalPrice?: number | string | null;
 }
 
+export function isPsionicItem(item: EquipmentItem): boolean {
+    return item.isPsiDrug
+        || item.subcategory === 'psi-drugs'
+        || /psionic/i.test(item.name);
+}
+
 export interface EquipmentCatalogData {
     items: EquipmentItem[];
 }

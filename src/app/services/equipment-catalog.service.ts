@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { EquipmentCatalogData, EquipmentItem, EQUIPMENT_CATEGORY_ORDER } from '../models/equipment';
+import { EquipmentCatalogData, EquipmentItem, EQUIPMENT_CATEGORY_ORDER, isPsionicItem } from '../models/equipment';
 import { TradeGood, TradeGoodsCatalogData } from '../models/trade-goods';
+import { SettingsService } from './settings.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,10 @@ export class EquipmentCatalogService {
   private goods: TradeGood[] = [];
   private actualValue: Record<string, number> = {};
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private settings: SettingsService
+  ) {}
 
   ensureLoaded(): Promise<void> {
     if (!this.loadPromise) {
@@ -23,7 +27,7 @@ export class EquipmentCatalogService {
   }
 
   getItems(): EquipmentItem[] {
-    return this.items;
+    return this.filterPsionics(this.items);
   }
 
   getGoods(): TradeGood[] {
@@ -44,11 +48,11 @@ export class EquipmentCatalogService {
   }
 
   getDrugs(): EquipmentItem[] {
-    return this.items.filter(item => item.category === 'drugs');
+    return this.getItems().filter(item => item.category === 'drugs');
   }
 
   getItemsForCategory(category: string, planetTechLevel: number): EquipmentItem[] {
-    return this.items.filter(item =>
+    return this.getItems().filter(item =>
       item.category === category && this.isAvailableAtTechLevel(item, planetTechLevel)
     );
   }
@@ -69,5 +73,12 @@ export class EquipmentCatalogService {
     this.items = equipment.items;
     this.goods = tradeGoods.goods;
     this.actualValue = tradeGoods.actualValue;
+  }
+
+  private filterPsionics(items: EquipmentItem[]): EquipmentItem[] {
+    if (this.settings.snapshot.psionicsEnabled) {
+      return items;
+    }
+    return items.filter(item => !isPsionicItem(item));
   }
 }

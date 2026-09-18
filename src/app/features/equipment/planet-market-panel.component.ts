@@ -1,11 +1,14 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subject, takeUntil } from 'rxjs';
 import { World } from '../../models/world';
 import { EquipmentItem, EQUIPMENT_CATEGORY_ORDER } from '../../models/equipment';
 import { TradeGood } from '../../models/trade-goods';
 import { PlanetMarketState } from '../../models/planet-market';
+import { PriceSource } from '../../models/settings';
 import { EquipmentCatalogService } from '../../services/equipment-catalog.service';
 import { PlanetMarketService } from '../../services/planet-market.service';
+import { SettingsService } from '../../services/settings.service';
 
 type MarketTabId = 'trade_goods' | string;
 
@@ -54,11 +57,10 @@ type MarketTabId = 'trade_goods' | string;
             <tr>
               <th>Die</th>
               <th>Cargo</th>
-              <th>Base</th>
-              <th>Purchase DM</th>
-              <th>Roll</th>
-              <th>Actual</th>
-              <th>Local price</th>
+              <th *ngIf="showTradeModifiers">DM</th>
+              <th *ngIf="showTradeModifiers">Roll</th>
+              <th *ngIf="showTradeModifiers">Actual</th>
+              <th>Price</th>
               <th>Lot</th>
             </tr>
           </thead>
@@ -66,11 +68,10 @@ type MarketTabId = 'trade_goods' | string;
             <tr *ngFor="let good of goods">
               <td>{{ good.die }}</td>
               <td>{{ good.name }}</td>
-              <td>{{ formatMoney(good.basePriceCr) }}</td>
-              <td>{{ formatSigned(purchaseDm(good)) }}</td>
-              <td>{{ tradeResult(good)?.roll }}</td>
-              <td>{{ tradeResult(good)?.percent }}%</td>
-              <td>{{ formatMoney(cargoLocalPrice(good)) }}</td>
+              <td *ngIf="showTradeModifiers">{{ formatSigned(activeDm(good)) }}</td>
+              <td *ngIf="showTradeModifiers">{{ tradeResult(good)?.roll }}</td>
+              <td *ngIf="showTradeModifiers">{{ tradeResult(good)?.percent }}%</td>
+              <td>{{ formatMoney(cargoPrice(good)) }}</td>
               <td>{{ good.quantity }} {{ good.quantityUnit }}</td>
             </tr>
           </tbody>
@@ -78,7 +79,7 @@ type MarketTabId = 'trade_goods' | string;
       </div>
 
       <div class="tab-body" *ngIf="activeTab !== 'trade_goods'">
-        <p class="psi-banner" *ngIf="activeTab === 'drugs'">
+        <p class="psi-banner" *ngIf="psionicsEnabled && activeTab === 'drugs'">
           <ng-container *ngIf="world.isPsionicsPermitted(); else psiIllegal">
             Psionics are permitted on this world<span *ngIf="world.hasPsionicInstitute"> (Psionic Institute)</span>.
             Psi-drugs are legal.
@@ -99,8 +100,7 @@ type MarketTabId = 'trade_goods' | string;
               <th>Name</th>
               <th>TL</th>
               <th>Weight</th>
-              <th>Base price</th>
-              <th>Local price</th>
+              <th>Price</th>
               <th *ngIf="showStatusColumn">Status</th>
               <th>Notes</th>
             </tr>
@@ -110,13 +110,12 @@ type MarketTabId = 'trade_goods' | string;
               <td>{{ item.name }}</td>
               <td>{{ item.tl == null ? '—' : item.tl }}</td>
               <td>{{ formatWeight(item) }}</td>
-              <td>{{ formatItemPrice(item) }}</td>
               <td>
-                <ng-container *ngIf="localPriceLabel(item) as local; else noLocal">
-                  {{ local }}
+                <ng-container *ngIf="displayPriceLabel(item) as price; else noPrice">
+                  {{ price }}
                   <span class="pct" *ngIf="pricePercent(item) as pct"> ({{ pct }}%)</span>
                 </ng-container>
-                <ng-template #noLocal>—</ng-template>
+                <ng-template #noPrice>—</ng-template>
               </td>
               <td *ngIf="showStatusColumn">
                 <ng-container *ngIf="activeTab === 'drugs'">
@@ -148,9 +147,10 @@ type MarketTabId = 'trade_goods' | string;
     .market-panel {
       margin: 0 auto 2rem;
       max-width: 1400px;
-      background: #fff;
+      background: var(--bg-card);
+      color: var(--text-primary);
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 20px var(--shadow);
       overflow: hidden;
     }
     .market-header {
@@ -180,8 +180,8 @@ type MarketTabId = 'trade_goods' | string;
       flex-wrap: wrap;
       gap: 0.25rem;
       padding: 0.75rem 1rem 0;
-      background: #f8f9fa;
-      border-bottom: 1px solid #e1e5e9;
+      background: var(--bg-muted);
+      border-bottom: 1px solid var(--border);
     }
     .tab {
       border: none;
@@ -190,22 +190,22 @@ type MarketTabId = 'trade_goods' | string;
       cursor: pointer;
       border-bottom: 3px solid transparent;
       font-weight: 600;
-      color: #555;
+      color: var(--text-secondary);
     }
-    .tab.active { color: #667eea; border-bottom-color: #667eea; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-body { padding: 1rem 1.25rem 1.5rem; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid #eee; vertical-align: top; }
-    th { color: #333; font-size: 0.8rem; }
+    th, td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--text-primary); font-size: 0.8rem; }
     .notes {
       max-width: 22rem;
       max-height: 7.5rem;
       overflow-y: auto;
-      color: #666;
+      color: var(--text-secondary);
       line-height: 1.4;
       padding-right: 0.35rem;
     }
-    .pct { color: #667eea; font-size: 0.8rem; }
+    .pct { color: var(--accent); font-size: 0.8rem; }
     .badge {
       display: inline-block;
       margin-right: 0.35rem;
@@ -217,15 +217,15 @@ type MarketTabId = 'trade_goods' | string;
     .badge.ok { background: #d4edda; color: #155724; }
     .badge.bad { background: #f8d7da; color: #721c24; }
     .unavailable { opacity: 0.65; }
-    .empty, .psi-banner, .law-banner { margin: 0 0 0.75rem; color: #555; }
-    .psi-banner { background: #f3e8ff; border-left: 3px solid #6f42c1; padding: 0.6rem 0.8rem; }
-    .law-banner { background: #fff4e5; border-left: 3px solid #fd7e14; padding: 0.6rem 0.8rem; }
+    .empty, .psi-banner, .law-banner { margin: 0 0 0.75rem; color: var(--text-secondary); }
+    .psi-banner { background: var(--banner-psi-bg); border-left: 3px solid #6f42c1; padding: 0.6rem 0.8rem; }
+    .law-banner { background: var(--banner-law-bg); border-left: 3px solid #fd7e14; padding: 0.6rem 0.8rem; }
     @media (max-width: 768px) {
       .market-header { flex-direction: column; }
     }
   `]
 })
-export class PlanetMarketPanelComponent implements OnChanges {
+export class PlanetMarketPanelComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) world!: World;
   @Input() hexLabel = '';
   @Output() closed = new EventEmitter<void>();
@@ -235,6 +235,9 @@ export class PlanetMarketPanelComponent implements OnChanges {
   goods: TradeGood[] = [];
   categoryTabs = EQUIPMENT_CATEGORY_ORDER;
   tradeClassLabels: string[] = [];
+  priceSource: PriceSource = 'purchase';
+  psionicsEnabled = true;
+  private destroy$ = new Subject<void>();
 
   get visibleItems(): EquipmentItem[] {
     if (!this.world || this.activeTab === 'trade_goods') {
@@ -254,10 +257,29 @@ export class PlanetMarketPanelComponent implements OnChanges {
     return this.activeTab === 'drugs' || this.visibleItems.some(item => this.hasLegality(item));
   }
 
+  get showTradeModifiers(): boolean {
+    return this.priceSource !== 'base';
+  }
+
   constructor(
     private catalog: EquipmentCatalogService,
-    private planetMarket: PlanetMarketService
-  ) {}
+    private planetMarket: PlanetMarketService,
+    private settingsService: SettingsService
+  ) {
+    this.settingsService.settings$.pipe(takeUntil(this.destroy$)).subscribe(settings => {
+      const psionicsChanged = this.psionicsEnabled !== settings.psionicsEnabled;
+      this.priceSource = settings.priceSource;
+      this.psionicsEnabled = settings.psionicsEnabled;
+      if (this.world && psionicsChanged) {
+        this.refresh();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['world'] && this.world) {
@@ -275,16 +297,16 @@ export class PlanetMarketPanelComponent implements OnChanges {
     this.syncFromWorld();
   }
 
-  purchaseDm(good: TradeGood): number {
-    return this.planetMarket.getPurchaseDm(this.world, good);
+  activeDm(good: TradeGood): number {
+    return this.planetMarket.getActiveDm(this.world, good);
   }
 
   tradeResult(good: TradeGood) {
-    return this.market?.tradeResults[good.die];
+    return this.market ? this.planetMarket.getActiveTradeResult(good, this.market) : undefined;
   }
 
-  cargoLocalPrice(good: TradeGood): number {
-    return this.market ? this.planetMarket.getCargoLocalPrice(good, this.market) : good.basePriceCr;
+  cargoPrice(good: TradeGood): number {
+    return this.market ? this.planetMarket.getCargoPrice(good, this.market) : good.basePriceCr;
   }
 
   formatMoney(amount: number): string {
@@ -308,9 +330,9 @@ export class PlanetMarketPanelComponent implements OnChanges {
     return this.planetMarket.formatItemPrice(price, item.currency || 'Cr');
   }
 
-  localPriceLabel(item: EquipmentItem): string | null {
+  displayPriceLabel(item: EquipmentItem): string | null {
     if (!this.market) {
-      return null;
+      return this.formatItemPrice(item);
     }
     const purchasePrice = this.planetMarket.getPurchasePrice(item, this.world);
     const local = this.planetMarket.getLocalPrice(item, this.market, this.world);

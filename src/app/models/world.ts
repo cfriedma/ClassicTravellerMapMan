@@ -6,6 +6,11 @@ export interface PlanetProperty {
     label: string;
 }
 
+export interface BalkanState {
+    government: PlanetProperty;
+    lawLevel: PlanetProperty;
+}
+
 export class World {
     starportType: StarportType;
     hasNavalBase: boolean;
@@ -20,6 +25,7 @@ export class World {
     drugLegality: boolean;
     hasPsionicInstitute: boolean;
     psionicPunishment: PsionicPunishment;
+    balkanStates?: BalkanState[];
     market?: PlanetMarketState;
 
     spaceLanes: SectorHex[];
@@ -126,6 +132,9 @@ export class World {
         );
         if (data.market) {
             world.market = data.market as PlanetMarketState;
+        }
+        if (Array.isArray(data.balkanStates)) {
+            world.balkanStates = data.balkanStates as BalkanState[];
         }
         return world;
     }
@@ -251,7 +260,7 @@ const PlanetGovernmentLabels: { [key: number]: string } = {
     4: "Representitive Democracy. Ruling functions are performed by elected representatives.",
     5: "Feudal Technocracy. Ruling functions are performed by specific individuals for persons who agree to be ruled by them. Relationshiops are based on the performance of technical activities which are mutually benificial.",
     6: "Captive Government. Ruling functions are performed by an imposed leadership answerable to an outside group. A colony or conquered area.",
-    7: "Balkenization. No central ruling authority exists. Law level refers to government nearest the starport.",
+    7: "Balkanization. No central ruling authority exists. Law level refers to government nearest the starport.",
     8: "Civil Service Bureaucracy. Ruling functions are performed by government selecting individuals selected for their expertise.",
     9: "Impersonal Bureaucracy. Ruling functions are performed by agencies that have become insulated from governed citizens.",
     10: "Charismatic Dictatorship. Ruling functions are performed by agencies directed by a single leader who enjoys the overwhelming confidence of the citizens.",

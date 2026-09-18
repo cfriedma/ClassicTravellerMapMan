@@ -6,11 +6,13 @@ import { SubsectorManagerService, SubsectorData } from '../services/subsector-ma
 import { SectorHex } from '../models/sectorhex';
 import { World, StarportType } from '../models/world';
 import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-panel.component';
+import { SettingsMenuComponent } from '../shared/settings-menu.component';
+import { SettingsService } from '../services/settings.service';
 
 @Component({
   selector: 'app-subsector-view',
   standalone: true,
-  imports: [CommonModule, PlanetMarketPanelComponent],
+  imports: [CommonModule, PlanetMarketPanelComponent, SettingsMenuComponent],
   template: `
     <div class="subsector-container" *ngIf="subsectorData; else notFound">
       <!-- Header -->
@@ -29,12 +31,14 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
               <button class="btn btn-share" (click)="shareUrl()">🔗 Share URL</button>
             </div>
           </div>
+
+          <app-settings-menu></app-settings-menu>
         </div>
       </header>
 
       <!-- Hex Map -->
       <div class="hex-map-container">
-        <div class="hex-map">
+        <div class="hex-map" #hexMap (wheel)="onMapWheel($event)">
           <canvas 
             #hexCanvas
             class="hex-canvas"
@@ -87,6 +91,17 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
                   <span>{{ selectedHex.world.planetGovernment.key }} ({{ selectedHex.world.planetGovernment.label }})</span>
                 </div>
                 
+                <div class="detail-item" *ngIf="autoRollBalkanization && selectedHex.world.balkanStates?.length">
+                  <label>Balkan states:</label>
+                  <div class="balkan-states">
+                    <div *ngFor="let state of selectedHex.world.balkanStates; let i = index" class="balkan-state">
+                      <strong>{{ i === 0 ? 'Starport' : 'State ' + (i + 1) }}:</strong>
+                      Gov {{ state.government.key }} ({{ state.government.label }})
+                      · Law {{ state.lawLevel.key }} ({{ state.lawLevel.label }})
+                    </div>
+                  </div>
+                </div>
+                
                 <div class="detail-item">
                   <label>Law Level:</label>
                   <span>{{ selectedHex.world.planetLawLevel.key }} ({{ selectedHex.world.planetLawLevel.label }})</span>
@@ -105,12 +120,12 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
                   </span>
                 </div>
                 
-                <div class="detail-item" *ngIf="selectedHex.world.hasPsionicInstitute">
+                <div class="detail-item" *ngIf="psionicsEnabled && selectedHex.world.hasPsionicInstitute">
                   <label>Special:</label>
                   <span class="base-tag psionic">Psionic Institute</span>
                 </div>
                 
-                <div class="detail-item" *ngIf="selectedHex.world.psionicPunishment">
+                <div class="detail-item" *ngIf="psionicsEnabled && selectedHex.world.psionicPunishment">
                   <label>Psionic Punishment:</label>
                   <span>{{ selectedHex.world.psionicPunishment }}</span>
                 </div>
@@ -149,7 +164,7 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
   styles: [`
     .subsector-container {
       min-height: 100vh;
-      background: #f5f7fa;
+      background: var(--bg-page);
     }
 
     .subsector-header {
@@ -164,6 +179,10 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
       display: flex;
       align-items: center;
       gap: 2rem;
+    }
+
+    .header-info {
+      flex: 1;
     }
 
     .btn-back {
@@ -230,20 +249,23 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
 
     .hex-map {
       flex: 1;
-      background: white;
+      min-width: 0;
+      background: var(--bg-card);
       border-radius: 12px;
       padding: 2rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      box-shadow: 0 4px 20px var(--shadow);
+      overflow: auto;
+      max-height: calc(100vh - 12rem);
+      overscroll-behavior: contain;
     }
 
     .hex-canvas {
-      border: 1px solid #e1e5e9;
+      display: block;
+      margin: 0 auto;
+      border: 1px solid var(--border);
       border-radius: 8px;
       cursor: pointer;
-      background: #fafafa;
+      background: var(--bg-canvas);
     }
 
     .world-detail-column {
@@ -256,9 +278,9 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
     }
 
     .world-detail-panel {
-      background: white;
+      background: var(--bg-card);
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 20px var(--shadow);
       max-height: 700px;
       overflow-y: auto;
     }
@@ -311,12 +333,12 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
 
     .detail-item label {
       font-weight: bold;
-      color: #333;
+      color: var(--text-primary);
       font-size: 0.9rem;
     }
 
     .detail-item span {
-      color: #666;
+      color: var(--text-secondary);
       font-size: 0.95rem;
     }
 
@@ -355,11 +377,26 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
     }
 
     .trade-route {
-      background: #f8f9fa;
+      background: var(--bg-muted);
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
       font-size: 0.85rem;
-      border-left: 3px solid #2196f3;
+      border-left: 3px solid var(--lane);
+    }
+
+    .balkan-states {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .balkan-state {
+      background: var(--bg-muted);
+      padding: 0.45rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
     }
 
     .btn-market {
@@ -396,13 +433,13 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
 
     .not-found h1 {
       font-size: 3rem;
-      color: #333;
+      color: var(--text-primary);
       margin-bottom: 1rem;
     }
 
     .not-found p {
       font-size: 1.2rem;
-      color: #666;
+      color: var(--text-secondary);
       margin-bottom: 2rem;
     }
 
@@ -459,6 +496,7 @@ import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-
 })
 export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('hexCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('hexMap') hexMapRef?: ElementRef<HTMLDivElement>;
   private destroy$ = new Subject<void>();
   private ctx!: CanvasRenderingContext2D;
   
@@ -466,29 +504,49 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   selectedHexIndex = -1;
   selectedHex: SectorHex | null = null;
   marketOpen = false;
-  
-  // Canvas properties
-  canvasWidth = 1100;
-  canvasHeight = 750;
-  private hexRadius = 32;
+  psionicsEnabled = true;
+  autoRollBalkanization = false;
+  private mapScale = 1;
   private hoveredHexIndex = -1;
+
+  get canvasWidth(): number {
+    return Math.round(1100 * this.mapScale);
+  }
+
+  get canvasHeight(): number {
+    return Math.round(750 * this.mapScale);
+  }
+
+  get hexRadius(): number {
+    return 32 * this.mapScale;
+  }
   
-  // Calculated properties - use getters to ensure they update
   get hexWidth(): number {
-    return this.hexRadius * Math.sqrt(3); // Width for flat-top hex
+    return this.hexRadius * Math.sqrt(3);
   }
   
   get hexHeight(): number {
-    return this.hexRadius * 2; // Height for flat-top hex
+    return this.hexRadius * 2;
   }
   
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private subsectorManager: SubsectorManagerService
+    private subsectorManager: SubsectorManagerService,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
+    this.settingsService.settings$.pipe(takeUntil(this.destroy$)).subscribe(settings => {
+      this.psionicsEnabled = settings.psionicsEnabled;
+      this.autoRollBalkanization = settings.autoRollBalkanization;
+      this.mapScale = settings.mapScale;
+      if (settings.autoRollBalkanization) {
+        this.subsectorManager.ensureBalkanization(this.subsectorData);
+      }
+      this.redrawCanvas();
+    });
+
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = params['id'];
       if (id) {
@@ -503,20 +561,55 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   ngAfterViewInit(): void {
-    if (this.canvasRef?.nativeElement) {
-      this.ctx = this.canvasRef.nativeElement.getContext('2d')!;
-      // Draw once canvas is ready
-      setTimeout(() => this.drawSubsector(), 0);
-    }
+    this.redrawCanvas();
+  }
+
+  private redrawCanvas(): void {
+    setTimeout(() => {
+      if (this.canvasRef?.nativeElement) {
+        this.ctx = this.canvasRef.nativeElement.getContext('2d')!;
+        this.drawSubsector();
+      }
+    }, 0);
   }
 
   private loadSubsector(id: string): void {
     this.subsectorData = this.subsectorManager.getSubsector(id);
     if (this.subsectorData) {
+      if (this.autoRollBalkanization) {
+        this.subsectorManager.ensureBalkanization(this.subsectorData);
+      }
       if (this.ctx) {
         this.drawSubsector();
       }
     }
+  }
+
+  onMapWheel(event: WheelEvent): void {
+    const el = this.hexMapRef?.nativeElement;
+    if (!el) {
+      return;
+    }
+    const canScrollX = el.scrollWidth > el.clientWidth + 1;
+    const canScrollY = el.scrollHeight > el.clientHeight + 1;
+    if (!canScrollX && !canScrollY) {
+      return;
+    }
+    let dx = event.deltaX + (event.shiftKey ? event.deltaY : 0);
+    let dy = event.shiftKey ? 0 : event.deltaY;
+    if (!event.shiftKey && canScrollX && !canScrollY && event.deltaX === 0) {
+      dx = event.deltaY;
+      dy = 0;
+    }
+    const nextLeft = Math.min(el.scrollWidth - el.clientWidth, Math.max(0, el.scrollLeft + dx));
+    const nextTop = Math.min(el.scrollHeight - el.clientHeight, Math.max(0, el.scrollTop + dy));
+    const moved = nextLeft !== el.scrollLeft || nextTop !== el.scrollTop;
+    if (!moved) {
+      return;
+    }
+    event.preventDefault();
+    el.scrollLeft = nextLeft;
+    el.scrollTop = nextTop;
   }
 
   selectHex(index: number): void {
@@ -629,10 +722,10 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     
     // Fill hexagon
     if (hasWorld) {
-      this.ctx.fillStyle = '#e3f2fd';
+      this.ctx.fillStyle = this.canvasColor('--hex-world-fill', '#e3f2fd');
       this.ctx.fill();
     } else {
-      this.ctx.fillStyle = '#f8f9fa';
+      this.ctx.fillStyle = this.canvasColor('--hex-empty-fill', '#f8f9fa');
       this.ctx.globalAlpha = 0.35;
       this.ctx.fill();
       this.ctx.globalAlpha = 1.0;
@@ -640,27 +733,27 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     
     // Stroke hexagon
     if (isSelected) {
-      this.ctx.strokeStyle = '#667eea';
+      this.ctx.strokeStyle = this.canvasColor('--accent', '#667eea');
       this.ctx.lineWidth = 3;
     } else if (isHovered) {
-      this.ctx.strokeStyle = '#667eea';
+      this.ctx.strokeStyle = this.canvasColor('--accent', '#667eea');
       this.ctx.lineWidth = 2;
     } else if (hasWorld) {
-      this.ctx.strokeStyle = '#2196f3';
+      this.ctx.strokeStyle = this.canvasColor('--hex-world-stroke', '#2196f3');
       this.ctx.lineWidth = 2;
     } else {
-      this.ctx.strokeStyle = '#e1e5e9';
+      this.ctx.strokeStyle = this.canvasColor('--hex-empty-stroke', '#e1e5e9');
       this.ctx.lineWidth = 1;
     }
     this.ctx.stroke();
     
     // Draw hex coordinates
-    this.ctx.fillStyle = '#666';
-    this.ctx.font = '10px Arial';
+    this.ctx.fillStyle = this.canvasColor('--hex-label', '#666');
+    this.ctx.font = this.scaledFont(10);
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'top';
     const coords = this.getHexCoordinates(index);
-    this.ctx.fillText(coords, x, y - this.hexRadius + 5);
+    this.ctx.fillText(coords, x, y - this.hexRadius + this.scaled(5));
     
     // Draw world info if present
     if (hasWorld) {
@@ -675,18 +768,18 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     this.ctx.textBaseline = 'middle';
     
     // Starport
-    this.ctx.fillStyle = '#000';
-    this.ctx.font = 'bold 14px Arial';
-    this.ctx.fillText(world.starportType, x, y - 8);
+    this.ctx.fillStyle = this.canvasColor('--hex-uwp', '#000');
+    this.ctx.font = this.scaledFont(14, 'Arial', true);
+    this.ctx.fillText(world.starportType, x, y - this.scaled(8));
     
     // UWP line 1
-    this.ctx.font = '8px Courier New';
+    this.ctx.font = this.scaledFont(8, 'Courier New');
     const uwp1 = `${this.formatHex(world.planetSize.key)}${this.formatHex(world.planetAtmosphere.key)}${this.formatHex(world.planetHydrographics.key)}`;
-    this.ctx.fillText(uwp1, x, y + 4);
+    this.ctx.fillText(uwp1, x, y + this.scaled(4));
     
     // UWP line 2
     const uwp2 = `${this.formatHex(world.planetPopulation.key)}${this.formatHex(world.planetGovernment.key)}${this.formatHex(world.planetLawLevel.key)}-${this.formatHex(world.planetTechLevel)}`;
-    this.ctx.fillText(uwp2, x, y + 14);
+    this.ctx.fillText(uwp2, x, y + this.scaled(14));
     
     // Bases
     if (world.hasNavalBase || world.hasScoutBase) {
@@ -694,9 +787,9 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
       if (world.hasNavalBase) baseText += 'N';
       if (world.hasScoutBase) baseText += 'S';
       
-      this.ctx.font = 'bold 8px Arial';
+      this.ctx.font = this.scaledFont(8, 'Arial', true);
       this.ctx.fillStyle = world.hasNavalBase ? '#dc3545' : '#28a745';
-      this.ctx.fillText(baseText, x, y + 24);
+      this.ctx.fillText(baseText, x, y + this.scaled(24));
     }
   }
 
@@ -705,8 +798,8 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     
     const processedPairs = new Set<string>();
     
-    this.ctx.strokeStyle = '#2196f3';
-    this.ctx.lineWidth = 2;
+    this.ctx.strokeStyle = this.canvasColor('--lane', '#2196f3');
+    this.ctx.lineWidth = Math.max(1, this.scaled(2));
     this.ctx.globalAlpha = 0.6;
     
     for (let i = 0; i < this.subsectorData.subsector.sectorHexes.length; i++) {
@@ -726,7 +819,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
               const dx = pos2.x - pos1.x;
               const dy = pos2.y - pos1.y;
               const length = Math.sqrt(dx * dx + dy * dy);
-              const inset = 15; // Distance to move inside hex
+              const inset = this.scaled(15);
               
               const startX = pos1.x + (dx / length) * inset;
               const startY = pos1.y + (dy / length) * inset;
@@ -753,17 +846,11 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     const col = index % 10;
     const row = Math.floor(index / 10);
     
-    const offsetX = 80; // Left margin
-    const offsetY = 80; // Top margin
+    const offsetX = this.scaled(80);
+    const offsetY = this.scaled(80);
     
-    // Correct hex grid calculations for flat-top hexagons
-    // For flat-top hexes arranged in rows and columns:
-    // - Horizontal spacing: exact distance to avoid overlap
-    // - Vertical spacing: exact distance for edge-to-edge contact
-    // - Every other row is offset horizontally by half the horizontal spacing
-    
-    const horizontalSpacing = this.hexWidth + 15; // Larger gaps for clearer space lanes
-    const verticalSpacing = this.hexHeight * 0.9; // More vertical spacing too
+    const horizontalSpacing = this.hexWidth + this.scaled(15);
+    const verticalSpacing = this.hexHeight * 0.9;
     
     const x = offsetX + col * horizontalSpacing + (row % 2) * (horizontalSpacing / 2);
     const y = offsetY + row * verticalSpacing;
@@ -785,6 +872,20 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     }
     
     return -1;
+  }
+
+  private scaled(value: number): number {
+    return value * this.mapScale;
+  }
+
+  private scaledFont(size: number, family = 'Arial', bold = false): string {
+    const px = Math.max(6, Math.round(size * this.mapScale));
+    return `${bold ? 'bold ' : ''}${px}px ${family}`;
+  }
+
+  private canvasColor(variableName: string, fallback: string): string {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+    return value || fallback;
   }
 
   getHexColumn(index: number): number {

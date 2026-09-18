@@ -13,5 +13,6 @@ export interface DrugMarketState {
 
 export interface PlanetMarketState {
     tradeResults: Record<string, TradePriceResult>;
+    resaleResults?: Record<string, TradePriceResult>;
     drugs: Record<string, DrugMarketState>;
 }

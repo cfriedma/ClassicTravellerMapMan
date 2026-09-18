@@ -1,5 +1,54 @@
 /* Global Styles for Classic Traveller Map Man */
 
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --bg-page: #f5f7fa;
+  --bg-card: #ffffff;
+  --bg-muted: #f8f9fa;
+  --bg-hover: #e9ecef;
+  --bg-canvas: #fafafa;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border: #e1e5e9;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --accent: #667eea;
+  --home-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  --hex-world-fill: #e3f2fd;
+  --hex-empty-fill: #f8f9fa;
+  --hex-empty-stroke: #e1e5e9;
+  --hex-world-stroke: #2196f3;
+  --hex-label: #666666;
+  --hex-uwp: #000000;
+  --lane: #2196f3;
+  --banner-psi-bg: #f3e8ff;
+  --banner-law-bg: #fff4e5;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-page: #161a21;
+  --bg-card: #232833;
+  --bg-muted: #2c333d;
+  --bg-hover: #3a4250;
+  --bg-canvas: #1c2129;
+  --text-primary: #e8eaed;
+  --text-secondary: #b0b6be;
+  --border: #3d4550;
+  --shadow: rgba(0, 0, 0, 0.45);
+  --accent: #8b9cf7;
+  --home-gradient: linear-gradient(135deg, #0f1724 0%, #1a2740 100%);
+  --hex-world-fill: #1e3a5f;
+  --hex-empty-fill: #2c333d;
+  --hex-empty-stroke: #3d4550;
+  --hex-world-stroke: #4da3ff;
+  --hex-label: #b0b6be;
+  --hex-uwp: #e8eaed;
+  --lane: #4da3ff;
+  --banner-psi-bg: #3b2a55;
+  --banner-law-bg: #4a3218;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -9,8 +58,8 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
-  color: #333;
-  background: #f5f7fa;
+  color: var(--text-primary);
+  background: var(--bg-page);
 }
 
 .container {
@@ -28,9 +77,9 @@ p {
 }
 
 .card {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px var(--shadow);
   margin-bottom: 2rem;
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -38,7 +87,7 @@ p {
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 32px var(--shadow);
 }
 
 .btn {

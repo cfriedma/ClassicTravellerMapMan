@@ -7,6 +7,9 @@ import { DrugMarketState, PlanetMarketState, TradePriceResult } from '../models/
 import { getItemIllegalFromLawLevel } from '../models/weapon-legality';
 import { EquipmentCatalogService } from './equipment-catalog.service';
 import { SubsectorManagerService } from './subsector-manager.service';
+import { SettingsService } from './settings.service';
+
+type TradeDmKind = 'purchase' | 'resale';
 
 @Injectable({
   providedIn: 'root'
@@ -14,14 +17,16 @@ import { SubsectorManagerService } from './subsector-manager.service';
 export class PlanetMarketService {
   constructor(
     private catalog: EquipmentCatalogService,
-    private subsectorManager: SubsectorManagerService
+    private subsectorManager: SubsectorManagerService,
+    private settings: SettingsService
   ) {}
 
   async ensureMarket(world: World): Promise<PlanetMarketState> {
     await this.catalog.ensureLoaded();
     if (!world.market) {
       world.market = {
-        tradeResults: this.rollAllTradeResults(world),
+        tradeResults: this.rollAllTradeResults(world, 'purchase'),
+        resaleResults: this.rollAllTradeResults(world, 'resale'),
         drugs: this.rollAllDrugs(world, true, true)
       };
       this.persist();
@@ -29,9 +34,17 @@ export class PlanetMarketService {
     }
 
     let changed = false;
+    if (!world.market.resaleResults) {
+      world.market.resaleResults = this.rollAllTradeResults(world, 'resale');
+      changed = true;
+    }
     for (const good of this.catalog.getGoods()) {
       if (!world.market.tradeResults[good.die]) {
-        world.market.tradeResults[good.die] = this.rollTradeResult(world, good);
+        world.market.tradeResults[good.die] = this.rollTradeResult(world, good, 'purchase');
+        changed = true;
+      }
+      if (!world.market.resaleResults[good.die]) {
+        world.market.resaleResults[good.die] = this.rollTradeResult(world, good, 'resale');
         changed = true;
       }
     }
@@ -59,7 +72,8 @@ export class PlanetMarketService {
   async rerollPrices(world: World): Promise<void> {
     await this.catalog.ensureLoaded();
     const market = await this.ensureMarket(world);
-    market.tradeResults = this.rollAllTradeResults(world);
+    market.tradeResults = this.rollAllTradeResults(world, 'purchase');
+    market.resaleResults = this.rollAllTradeResults(world, 'resale');
     this.persist();
   }
 
@@ -71,22 +85,37 @@ export class PlanetMarketService {
   }
 
   getPurchaseDm(world: World, good: TradeGood): number {
-    const classes = world.getTradeClasses();
-    let dm = 0;
-    for (const tradeClass of classes) {
-      const value = good.purchaseDms[tradeClass];
-      if (typeof value === 'number') {
-        dm += value;
-      }
+    return this.getDm(world, good, 'purchase');
+  }
+
+  getResaleDm(world: World, good: TradeGood): number {
+    return this.getDm(world, good, 'resale');
+  }
+
+  getActiveDm(world: World, good: TradeGood): number {
+    const source = this.settings.snapshot.priceSource;
+    if (source === 'resale') {
+      return this.getResaleDm(world, good);
     }
-    return dm;
+    return this.getPurchaseDm(world, good);
+  }
+
+  getActiveTradeResult(good: TradeGood, market: PlanetMarketState): TradePriceResult | undefined {
+    const source = this.settings.snapshot.priceSource;
+    if (source === 'resale') {
+      return market.resaleResults?.[good.die];
+    }
+    return market.tradeResults[good.die];
   }
 
   getPricePercent(item: EquipmentItem, market: PlanetMarketState): number | null {
+    if (this.settings.snapshot.priceSource === 'base') {
+      return null;
+    }
     if (!this.isMapped(item) || !item.tradeDie) {
       return null;
     }
-    const result = market.tradeResults[item.tradeDie];
+    const result = this.getResultForDie(item.tradeDie, market);
     return result ? result.percent : null;
   }
 
@@ -123,10 +152,17 @@ export class PlanetMarketService {
     return price * (percent / 100);
   }
 
-  getCargoLocalPrice(good: TradeGood, market: PlanetMarketState): number {
-    const result = market.tradeResults[good.die];
+  getCargoPrice(good: TradeGood, market: PlanetMarketState): number {
+    if (this.settings.snapshot.priceSource === 'base') {
+      return good.basePriceCr;
+    }
+    const result = this.getActiveTradeResult(good, market);
     const percent = result ? result.percent : 100;
     return good.basePriceCr * (percent / 100);
+  }
+
+  getCargoLocalPrice(good: TradeGood, market: PlanetMarketState): number {
+    return this.getCargoPrice(good, market);
   }
 
   formatMoney(amount: number, currency: string = 'Cr'): string {
@@ -154,16 +190,37 @@ export class PlanetMarketService {
     return !!item.tradeDie && !!item.tradeGoodTag && item.tradeGoodTag !== 'unmapped';
   }
 
-  private rollAllTradeResults(world: World): Record<string, TradePriceResult> {
+  private getResultForDie(die: string, market: PlanetMarketState): TradePriceResult | undefined {
+    const source = this.settings.snapshot.priceSource;
+    if (source === 'resale') {
+      return market.resaleResults?.[die];
+    }
+    return market.tradeResults[die];
+  }
+
+  private getDm(world: World, good: TradeGood, kind: TradeDmKind): number {
+    const classes = world.getTradeClasses();
+    const table = kind === 'resale' ? good.resaleDms : good.purchaseDms;
+    let dm = 0;
+    for (const tradeClass of classes) {
+      const value = table[tradeClass];
+      if (typeof value === 'number') {
+        dm += value;
+      }
+    }
+    return dm;
+  }
+
+  private rollAllTradeResults(world: World, kind: TradeDmKind): Record<string, TradePriceResult> {
     const results: Record<string, TradePriceResult> = {};
     for (const good of this.catalog.getGoods()) {
-      results[good.die] = this.rollTradeResult(world, good);
+      results[good.die] = this.rollTradeResult(world, good, kind);
     }
     return results;
   }
 
-  private rollTradeResult(world: World, good: TradeGood): TradePriceResult {
-    const dm = this.getPurchaseDm(world, good);
+  private rollTradeResult(world: World, good: TradeGood, kind: TradeDmKind): TradePriceResult {
+    const dm = this.getDm(world, good, kind);
     const raw = DiceUtils.standardRoll(dm);
     const roll = Math.min(15, Math.max(2, raw));
     return {

@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SettingsService } from './services/settings.service';
 
 @Component({
   selector: 'app-root',
@@ -17,4 +18,6 @@ import { RouterOutlet } from '@angular/router';
 })
 export class AppComponent {
   title = 'Classic Traveller Map Man';
+
+  constructor(private settings: SettingsService) {}
 }

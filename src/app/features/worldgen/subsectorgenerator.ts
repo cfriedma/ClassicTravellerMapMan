@@ -1,7 +1,12 @@
 import { SectorHex } from "src/app/models/sectorhex";
 import { Subsector } from "src/app/models/subsector";
-import { World, StarportType, PlanetProperty, createPlanetSize, createPlanetAtmosphere, createPlanetHydrographics, createPlanetPopulation, createPlanetGovernment, createPlanetLawLevel, psionicPunishmentFromRoll } from "src/app/models/world";
+import { World, StarportType, PlanetProperty, BalkanState, createPlanetSize, createPlanetAtmosphere, createPlanetHydrographics, createPlanetPopulation, createPlanetGovernment, createPlanetLawLevel, psionicPunishmentFromRoll, PsionicPunishment } from "src/app/models/world";
 import { DiceUtils } from "src/app/shared/dice-utils";
+
+export interface WorldGenerationOptions {
+    psionicsEnabled?: boolean;
+    autoRollBalkanization?: boolean;
+}
 
 export class SubsectorGenerator {
     subsector?: Subsector | null;
@@ -24,11 +29,13 @@ export class SubsectorGenerator {
             this.subsector.sectorHexes[location].worldGenerationChanceModifier += modifier;
         }
     }
-    generateWorlds()
+    generateWorlds(options: WorldGenerationOptions = {})
     {
         if (this.subsector === undefined || this.subsector === null) {
             throw new Error("Subsector not initialized");
         }
+        const psionicsEnabled = options.psionicsEnabled !== false;
+        const autoRollBalkanization = options.autoRollBalkanization === true;
         for (let hex of this.subsector.sectorHexes) {
             // Generation may be run more than once on the same subsector.
             hex.world = null;
@@ -153,14 +160,21 @@ export class SubsectorGenerator {
                 }
                 const planetTechLevel = Math.max(DiceUtils.standardRoll(techLevelModifier), 0);
                 const drugLegality = DiceUtils.rollStandardCheck(planetLawLevel.key);
-                const hasPsionicInstitute = planetPopulation.key >= 9
+                const hasPsionicInstitute = psionicsEnabled
+                    && planetPopulation.key >= 9
                     && DiceUtils.rollStandardCheck(11, planetPopulation.key - 9);
-                const psionicPunishment = psionicPunishmentFromRoll(DiceUtils.standardRoll());
+                const psionicPunishment = psionicsEnabled
+                    ? psionicPunishmentFromRoll(DiceUtils.standardRoll())
+                    : PsionicPunishment.None;
                 const world = new World(starportType, hasNavalBase, hasScoutBase, planetSize, planetAtmosphere, planetHydrographics, planetPopulation, planetGovernment, planetLawLevel, planetTechLevel, drugLegality, hasPsionicInstitute, psionicPunishment);
+                if (autoRollBalkanization) {
+                    ensureWorldBalkanStates(world);
+                }
                 hex.world = world;
             }
         }
     }
+
     generateSpaceLanes() 
     {
         if (this.subsector === undefined || this.subsector === null) {
@@ -321,4 +335,49 @@ export class SubsectorGenerator {
         
         return probabilityMatrix[fullKey] || 7; // Default to impossible (7+ on 1d6)
     }
+}
+
+export function rollNonBalkanGovernment(populationKey: number): PlanetProperty {
+    let government = createPlanetGovernment(Math.max(DiceUtils.standardRoll(populationKey - 7), 0));
+    let attempts = 0;
+    while (government.key === 7 && attempts < 20) {
+        government = createPlanetGovernment(Math.max(DiceUtils.standardRoll(populationKey - 7), 0));
+        attempts += 1;
+    }
+    if (government.key === 7) {
+        government = createPlanetGovernment(8);
+    }
+    return government;
+}
+
+export function rollBalkanStates(population: PlanetProperty, starportLaw: PlanetProperty): BalkanState[] {
+    const count = DiceUtils.rolld6() + 1;
+    const states: BalkanState[] = [];
+    for (let i = 0; i < count; i++) {
+        const government = rollNonBalkanGovernment(population.key);
+        const lawLevel = i === 0
+            ? starportLaw
+            : createPlanetLawLevel(Math.min(Math.max(DiceUtils.standardRoll(government.key - 7), 0), 9));
+        states.push({ government, lawLevel });
+    }
+    return states;
+}
+
+export function ensureWorldBalkanStates(world: World): boolean {
+    if (world.planetGovernment.key !== 7) {
+        return false;
+    }
+    if (!world.balkanStates?.length) {
+        world.balkanStates = rollBalkanStates(world.planetPopulation, world.planetLawLevel);
+        return true;
+    }
+    const starport = world.balkanStates[0];
+    if (starport.government.key === 7) {
+        world.balkanStates[0] = {
+            government: rollNonBalkanGovernment(world.planetPopulation.key),
+            lawLevel: starport.lawLevel
+        };
+        return true;
+    }
+    return false;
 }

@@ -3,14 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SubsectorManagerService, SubsectorData } from '../services/subsector-manager.service';
+import { SettingsMenuComponent } from '../shared/settings-menu.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SettingsMenuComponent],
   template: `
     <div class="home-container">
       <header class="hero-section">
+        <div class="hero-toolbar">
+          <app-settings-menu></app-settings-menu>
+        </div>
         <h1 class="hero-title">Classic Traveller Map Generator</h1>
         <p class="hero-subtitle">Create and explore randomly generated subsectors in the Traveller universe</p>
       </header>
@@ -154,14 +158,21 @@ import { SubsectorManagerService, SubsectorData } from '../services/subsector-ma
   styles: [`
     .home-container {
       min-height: 100vh;
-      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      background: var(--home-gradient);
       padding: 2rem 1rem;
     }
 
     .hero-section {
+      position: relative;
       text-align: center;
       color: white;
       margin-bottom: 3rem;
+    }
+
+    .hero-toolbar {
+      position: absolute;
+      top: 0;
+      right: 0;
     }
 
     .hero-title {
@@ -187,9 +198,9 @@ import { SubsectorManagerService, SubsectorData } from '../services/subsector-ma
     }
 
     .card {
-      background: white;
+      background: var(--bg-card);
       border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      box-shadow: 0 8px 32px var(--shadow);
       overflow: hidden;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
@@ -228,15 +239,17 @@ import { SubsectorManagerService, SubsectorData } from '../services/subsector-ma
       display: block;
       margin-bottom: 0.5rem;
       font-weight: 600;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .input-group input {
       width: 100%;
       padding: 1rem;
-      border: 2px solid #e1e5e9;
+      border: 2px solid var(--border);
       border-radius: 8px;
       font-size: 1rem;
+      background: var(--bg-card);
+      color: var(--text-primary);
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
@@ -343,19 +356,19 @@ import { SubsectorManagerService, SubsectorData } from '../services/subsector-ma
       justify-content: space-between;
       align-items: center;
       padding: 1.5rem;
-      background: #f8f9fa;
+      background: var(--bg-muted);
       border-radius: 8px;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
 
     .recent-item:hover {
-      background: #e9ecef;
+      background: var(--bg-hover);
     }
 
     .recent-info h3 {
       margin: 0 0 0.5rem 0;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .recent-code {
@@ -366,7 +379,7 @@ import { SubsectorManagerService, SubsectorData } from '../services/subsector-ma
     }
 
     .recent-date {
-      color: #666;
+      color: var(--text-secondary);
       font-size: 0.9rem;
       margin: 0;
     }
@@ -393,11 +406,11 @@ import { SubsectorManagerService, SubsectorData } from '../services/subsector-ma
 
     .info-item h3 {
       margin: 0 0 1rem 0;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .info-item p {
-      color: #666;
+      color: var(--text-secondary);
       line-height: 1.6;
       margin: 0;
     }
