@@ -53,7 +53,7 @@ export class PlanetMarketService {
         world.market.drugs[drug.name] = this.rollDrugState(world, drug, true, true);
         changed = true;
       } else if (drug.isPsiDrug) {
-        const illegal = !world.isPsionicsPermitted();
+        const illegal = !world.arePsiDrugsLegal();
         if (world.market.drugs[drug.name].illegal !== illegal) {
           world.market.drugs[drug.name] = {
             ...world.market.drugs[drug.name],
@@ -267,7 +267,7 @@ export class PlanetMarketService {
 
   private rollIllegal(world: World, drug: EquipmentItem): boolean {
     if (drug.isPsiDrug) {
-      return !world.isPsionicsPermitted();
+      return !world.arePsiDrugsLegal();
     }
     const legal = DiceUtils.rollStandardCheck(world.planetLawLevel.key);
     return !legal;

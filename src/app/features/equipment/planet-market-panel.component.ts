@@ -82,12 +82,11 @@ type MarketTabId = 'trade_goods' | string;
         <p class="psi-banner" *ngIf="psionicsEnabled && activeTab === 'drugs'">
           <ng-container *ngIf="world.isPsionicsPermitted(); else psiIllegal">
             Psionics are permitted on this world<span *ngIf="world.hasPsionicInstitute"> (Psionic Institute)</span>.
-            Psi-drugs are legal.
           </ng-container>
           <ng-template #psiIllegal>
             Psionics are illegal on this world<span *ngIf="punishmentLabel"> ({{ punishmentLabel }})</span>.
-            Psi-drugs are illegal.
           </ng-template>
+          Psi-drugs are {{ world.arePsiDrugsLegal() ? 'legal' : 'illegal' }}.
         </p>
         <p class="law-banner" *ngIf="activeTab === 'weapons' || activeTab === 'ammunition'">
           {{ world.planetLawLevel.label }}

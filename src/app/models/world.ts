@@ -111,7 +111,11 @@ export class World {
     }
 
     isPsionicsPermitted(): boolean {
-        return this.hasPsionicInstitute || this.psionicPunishment === PsionicPunishment.None;
+        return this.hasPsionicInstitute || this.arePsiDrugsLegal();
+    }
+
+    arePsiDrugsLegal(): boolean {
+        return this.psionicPunishment === PsionicPunishment.None;
     }
 
     static fromData(data: Partial<World> & Record<string, unknown>): World {
