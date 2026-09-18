@@ -18,6 +18,7 @@ export class World {
     planetTechLevel: number;
     drugLegality: boolean;
     hasPsionicInstitute: boolean;
+    psionicPunishment: PsionicPunishment;
 
     spaceLanes: SectorHex[];
 
@@ -33,7 +34,8 @@ export class World {
         planetLawLevel: PlanetProperty,
         planetTechLevel: number,
         drugLegality: boolean,
-        hasPsionicInstitute: boolean
+        hasPsionicInstitute: boolean,
+        psionicPunishment: PsionicPunishment
     ) {
         this.starportType = starportType;
         this.hasNavalBase = hasNavalBase;
@@ -47,6 +49,7 @@ export class World {
         this.planetTechLevel = planetTechLevel;
         this.drugLegality = drugLegality;
         this.hasPsionicInstitute = hasPsionicInstitute;
+        this.psionicPunishment = psionicPunishment;
         this.spaceLanes = [];
     }
 
@@ -86,6 +89,24 @@ export enum StarportType {
     D = "D",
     E = "E",
     X = "X",
+}
+
+export enum PsionicPunishment {
+    None = "None",
+    Deportation = "Deportation",
+    Imprisonment = "Imprisonment",
+    TarringAndFeathering = "Tarring and feathering",
+    Lynching = "Lynching",
+    Lobotomy = "Lobotomy",
+}
+
+export function psionicPunishmentFromRoll(roll: number): PsionicPunishment {
+    if (roll >= 12) return PsionicPunishment.Lobotomy;
+    if (roll >= 10) return PsionicPunishment.Lynching;
+    if (roll >= 8) return PsionicPunishment.TarringAndFeathering;
+    if (roll >= 6) return PsionicPunishment.Imprisonment;
+    if (roll >= 4) return PsionicPunishment.Deportation;
+    return PsionicPunishment.None;
 }
 const PlanetSizeLabels: { [key: number]: string } = {
     0: "Asteroid/Planetoid Complex",
@@ -229,7 +250,8 @@ export function createPlanetLawLevel(key: number): PlanetProperty {
 //     createPlanetLawLevel(3),       // Military weapons prohibited
 //     8,     // Tech Level 8
 //     true,  // drugs are legal
-//     false  // no psionic institute
+//     false, // no psionic institute
+//     PsionicPunishment.None
 // );
 // 
 // console.log(exampleWorld.isAgriculturalWorld()); // true - meets agricultural criteria

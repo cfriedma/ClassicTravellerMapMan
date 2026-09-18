@@ -31,26 +31,6 @@ import { World, StarportType } from '../models/world';
         </div>
       </header>
 
-      <!-- Statistics Panel -->
-      <div class="stats-panel">
-        <div class="stat-item">
-          <div class="stat-number">{{ worldCount }}</div>
-          <div class="stat-label">Worlds</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">{{ starportStats.A + starportStats.B }}</div>
-          <div class="stat-label">Major Ports</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">{{ spaceLaneCount }}</div>
-          <div class="stat-label">Trade Routes</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">{{ navalBases + scoutBases }}</div>
-          <div class="stat-label">Bases</div>
-        </div>
-      </div>
-
       <!-- Hex Map -->
       <div class="hex-map-container">
         <div class="hex-map">
@@ -126,6 +106,11 @@ import { World, StarportType } from '../models/world';
               <div class="detail-item" *ngIf="selectedHex.world.hasPsionicInstitute">
                 <label>Special:</label>
                 <span class="base-tag psionic">Psionic Institute</span>
+              </div>
+              
+              <div class="detail-item" *ngIf="selectedHex.world.psionicPunishment">
+                <label>Psionic Punishment:</label>
+                <span>{{ selectedHex.world.psionicPunishment }}</span>
               </div>
               
               <div class="detail-item" *ngIf="selectedHex.world.spaceLanes.length > 0">
@@ -223,33 +208,6 @@ import { World, StarportType } from '../models/world';
       background: rgba(255, 255, 255, 0.3);
     }
 
-    .stats-panel {
-      background: white;
-      padding: 2rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    .stat-item {
-      text-align: center;
-    }
-
-    .stat-number {
-      font-size: 3rem;
-      font-weight: bold;
-      color: #667eea;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-      color: #666;
-      font-size: 1.1rem;
-    }
-
     .hex-map-container {
       max-width: 1400px;
       margin: 2rem auto;
@@ -343,6 +301,10 @@ import { World, StarportType } from '../models/world';
     .detail-item span {
       color: #666;
       font-size: 0.95rem;
+    }
+
+    .detail-item .base-tag {
+      color: #fff;
     }
 
     .base-tag {
@@ -485,13 +447,6 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     return this.hexRadius * 2; // Height for flat-top hex
   }
   
-  // Statistics
-  worldCount = 0;
-  starportStats = { A: 0, B: 0, C: 0, D: 0, E: 0, X: 0 };
-  spaceLaneCount = 0;
-  navalBases = 0;
-  scoutBases = 0;
-
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -523,47 +478,8 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   private loadSubsector(id: string): void {
     this.subsectorData = this.subsectorManager.getSubsector(id);
     if (this.subsectorData) {
-      this.calculateStatistics();
       if (this.ctx) {
         this.drawSubsector();
-      }
-    }
-  }
-
-  private calculateStatistics(): void {
-    if (!this.subsectorData) return;
-
-    this.worldCount = 0;
-    this.starportStats = { A: 0, B: 0, C: 0, D: 0, E: 0, X: 0 };
-    this.spaceLaneCount = 0;
-    this.navalBases = 0;
-    this.scoutBases = 0;
-
-    const processedSpaceLanes = new Set<string>();
-
-    for (const hex of this.subsectorData.subsector.sectorHexes) {
-      if (hex.world) {
-        this.worldCount++;
-        
-        // Count starports
-        const starportKey = StarportType[hex.world.starportType] as keyof typeof this.starportStats;
-        this.starportStats[starportKey]++;
-        
-        // Count bases
-        if (hex.world.hasNavalBase) this.navalBases++;
-        if (hex.world.hasScoutBase) this.scoutBases++;
-        
-        // Count unique space lanes
-        for (const connectedHex of hex.world.spaceLanes) {
-          const hexIndex = this.subsectorData.subsector.sectorHexes.indexOf(hex);
-          const connectedIndex = this.subsectorData.subsector.sectorHexes.indexOf(connectedHex);
-          const laneKey = hexIndex < connectedIndex ? `${hexIndex}-${connectedIndex}` : `${connectedIndex}-${hexIndex}`;
-          
-          if (!processedSpaceLanes.has(laneKey)) {
-            processedSpaceLanes.add(laneKey);
-            this.spaceLaneCount++;
-          }
-        }
       }
     }
   }
@@ -658,10 +574,13 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     // Fill hexagon
     if (hasWorld) {
       this.ctx.fillStyle = '#e3f2fd';
+      this.ctx.fill();
     } else {
       this.ctx.fillStyle = '#f8f9fa';
+      this.ctx.globalAlpha = 0.35;
+      this.ctx.fill();
+      this.ctx.globalAlpha = 1.0;
     }
-    this.ctx.fill();
     
     // Stroke hexagon
     if (isSelected) {
