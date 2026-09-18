@@ -1,4 +1,5 @@
 import { SectorHex } from "./sectorhex";
+import { PlanetMarketState, TradeClassCode } from "./planet-market";
 // Define interfaces for properties with both key and label
 export interface PlanetProperty {
     key: number;
@@ -19,6 +20,7 @@ export class World {
     drugLegality: boolean;
     hasPsionicInstitute: boolean;
     psionicPunishment: PsionicPunishment;
+    market?: PlanetMarketState;
 
     spaceLanes: SectorHex[];
 
@@ -60,15 +62,14 @@ export class World {
     }
     isNonAgriculturalWorld(): boolean {
         return this.planetAtmosphere.key <= 3 &&
-               this.planetHydrographics.key <= 3 &&
-               this.planetPopulation.key >=6;
+               this.planetPopulation.key >= 6;
     }
     isIndustrialWorld(): boolean {
         return [0, 1, 2, 4, 7, 9].includes(this.planetAtmosphere.key) &&
                this.planetPopulation.key >= 9;
     }
     isNonIndustrialWorld(): boolean {
-        return this.planetPopulation.key < 6;
+        return this.planetPopulation.key <= 6;
     }
     isRichWorld(): boolean {
         return this.planetGovernment.key >=4 && this.planetGovernment.key <= 9 &&
@@ -78,6 +79,55 @@ export class World {
     isPoorWorld(): boolean {
         return this.planetAtmosphere.key >= 2 && this.planetAtmosphere.key <= 5 &&
                this.planetHydrographics.key <= 3;
+    }
+
+    getTradeClasses(): TradeClassCode[] {
+        const classes: TradeClassCode[] = [];
+        if (this.isAgriculturalWorld()) classes.push('A');
+        if (this.isNonAgriculturalWorld()) classes.push('NA');
+        if (this.isIndustrialWorld()) classes.push('I');
+        if (this.isNonIndustrialWorld()) classes.push('NI');
+        if (this.isRichWorld()) classes.push('R');
+        if (this.isPoorWorld()) classes.push('P');
+        return classes;
+    }
+
+    getTradeClassLabels(): string[] {
+        const labels: Record<TradeClassCode, string> = {
+            A: 'Agricultural',
+            NA: 'Non-Agricultural',
+            I: 'Industrial',
+            NI: 'Non-Industrial',
+            R: 'Rich',
+            P: 'Poor'
+        };
+        return this.getTradeClasses().map(code => labels[code]);
+    }
+
+    isPsionicsPermitted(): boolean {
+        return this.hasPsionicInstitute || this.psionicPunishment === PsionicPunishment.None;
+    }
+
+    static fromData(data: Partial<World> & Record<string, unknown>): World {
+        const world = new World(
+            data.starportType as StarportType,
+            !!data.hasNavalBase,
+            !!data.hasScoutBase,
+            data.planetSize as PlanetProperty,
+            data.planetAtmosphere as PlanetProperty,
+            data.planetHydrographics as PlanetProperty,
+            data.planetPopulation as PlanetProperty,
+            data.planetGovernment as PlanetProperty,
+            data.planetLawLevel as PlanetProperty,
+            Number(data.planetTechLevel ?? 0),
+            !!data.drugLegality,
+            !!data.hasPsionicInstitute,
+            data.psionicPunishment as PsionicPunishment
+        );
+        if (data.market) {
+            world.market = data.market as PlanetMarketState;
+        }
+        return world;
     }
 }
 

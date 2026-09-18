@@ -1,0 +1,643 @@
+{
+  "goods": [
+    {
+      "die": "11",
+      "name": "Textiles",
+      "basePriceCr": 3000,
+      "purchaseDms": {
+        "A": -7,
+        "NA": -5,
+        "NI": -3
+      },
+      "resaleDms": {
+        "A": -6,
+        "NA": 1,
+        "R": 3
+      },
+      "quantity": "3Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "12",
+      "name": "Polymers",
+      "basePriceCr": 7000,
+      "purchaseDms": {
+        "I": -2,
+        "R": -3,
+        "P": 2
+      },
+      "resaleDms": {
+        "I": -2,
+        "R": 3
+      },
+      "quantity": "4Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "13",
+      "name": "Liquor",
+      "basePriceCr": 10000,
+      "purchaseDms": {
+        "A": -4
+      },
+      "resaleDms": {
+        "A": -3,
+        "I": 1,
+        "R": 2
+      },
+      "quantity": "1Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "14",
+      "name": "Wood",
+      "basePriceCr": 1000,
+      "purchaseDms": {
+        "A": -6
+      },
+      "resaleDms": {
+        "A": -6,
+        "I": 1,
+        "R": 2
+      },
+      "quantity": "2Dx10",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "15",
+      "name": "Crystals",
+      "basePriceCr": 20000,
+      "purchaseDms": {
+        "NA": -3,
+        "I": 4
+      },
+      "resaleDms": {
+        "NA": -3,
+        "I": 3,
+        "R": 3
+      },
+      "quantity": "1D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "16",
+      "name": "Radioactives",
+      "basePriceCr": 1000000,
+      "purchaseDms": {
+        "I": 7,
+        "NI": -3,
+        "R": 5
+      },
+      "resaleDms": {
+        "I": 6,
+        "NI": -3,
+        "R": -4
+      },
+      "quantity": "1D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "21",
+      "name": "Steel",
+      "basePriceCr": 500,
+      "purchaseDms": {
+        "I": -2,
+        "R": -1,
+        "P": 1
+      },
+      "resaleDms": {
+        "I": -2,
+        "R": -1,
+        "P": 3
+      },
+      "quantity": "4Dx10",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "22",
+      "name": "Copper",
+      "basePriceCr": 2000,
+      "purchaseDms": {
+        "I": -3,
+        "R": -2,
+        "P": 1
+      },
+      "resaleDms": {
+        "I": -3,
+        "R": -1
+      },
+      "quantity": "2Dx10",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "23",
+      "name": "Aluminum",
+      "basePriceCr": 1000,
+      "purchaseDms": {
+        "I": -3,
+        "R": -2,
+        "P": 1
+      },
+      "resaleDms": {
+        "I": -3,
+        "NI": 4,
+        "R": -1
+      },
+      "quantity": "5Dx10",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "24",
+      "name": "Tin",
+      "basePriceCr": 9000,
+      "purchaseDms": {
+        "I": -3,
+        "R": -2,
+        "P": 1
+      },
+      "resaleDms": {
+        "I": -3,
+        "R": -1
+      },
+      "quantity": "3Dx10",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "25",
+      "name": "Silver",
+      "basePriceCr": 70000,
+      "purchaseDms": {
+        "I": 5,
+        "R": -1,
+        "P": 2
+      },
+      "resaleDms": {
+        "I": 5,
+        "R": -1
+      },
+      "quantity": "1Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "26",
+      "name": "Special Alloys",
+      "basePriceCr": 200000,
+      "purchaseDms": {
+        "I": -3,
+        "NI": 5,
+        "R": -2
+      },
+      "resaleDms": {
+        "I": -3,
+        "NI": 4,
+        "R": -1
+      },
+      "quantity": "1D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "31",
+      "name": "Petrochemicals",
+      "basePriceCr": 10000,
+      "purchaseDms": {
+        "NA": -4,
+        "I": 1,
+        "NI": -5
+      },
+      "resaleDms": {
+        "NA": -4,
+        "I": 3,
+        "NI": -5
+      },
+      "quantity": "1D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "32",
+      "name": "Grain",
+      "basePriceCr": 300,
+      "purchaseDms": {
+        "A": -2,
+        "NA": 1,
+        "I": 2
+      },
+      "resaleDms": {
+        "A": -2
+      },
+      "quantity": "8Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "33",
+      "name": "Meat",
+      "basePriceCr": 1500,
+      "purchaseDms": {
+        "A": -2,
+        "NA": 2,
+        "I": 3
+      },
+      "resaleDms": {
+        "A": -2,
+        "I": 2,
+        "P": 1
+      },
+      "quantity": "4Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "34",
+      "name": "Spices",
+      "basePriceCr": 6000,
+      "purchaseDms": {
+        "A": -2,
+        "NA": 3,
+        "I": 2
+      },
+      "resaleDms": {
+        "A": -2,
+        "R": 2,
+        "P": 3
+      },
+      "quantity": "1Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "35",
+      "name": "Fruit",
+      "basePriceCr": 1000,
+      "purchaseDms": {
+        "A": -3,
+        "NA": 1,
+        "I": 2
+      },
+      "resaleDms": {
+        "A": -2,
+        "I": 3,
+        "P": 2
+      },
+      "quantity": "2Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "36",
+      "name": "Pharmaceuticals",
+      "basePriceCr": 100000,
+      "purchaseDms": {
+        "NA": -3,
+        "I": 4,
+        "P": 3
+      },
+      "resaleDms": {
+        "NA": -3,
+        "I": 5,
+        "R": 4
+      },
+      "quantity": "1D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "41",
+      "name": "Gems",
+      "basePriceCr": 1000000,
+      "purchaseDms": {
+        "I": 4,
+        "NI": -8,
+        "P": -3
+      },
+      "resaleDms": {
+        "I": 4,
+        "NI": -2,
+        "R": 8
+      },
+      "quantity": "1D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "42",
+      "name": "Firearms",
+      "basePriceCr": 30000,
+      "purchaseDms": {
+        "I": -3,
+        "R": -2,
+        "P": 3
+      },
+      "resaleDms": {
+        "I": -2,
+        "R": -1,
+        "P": 3
+      },
+      "quantity": "2D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "43",
+      "name": "Ammunition",
+      "basePriceCr": 30000,
+      "purchaseDms": {
+        "I": -3,
+        "R": -2,
+        "P": 3
+      },
+      "resaleDms": {
+        "I": -2,
+        "R": -1,
+        "P": 3
+      },
+      "quantity": "2D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "44",
+      "name": "Blades",
+      "basePriceCr": 10000,
+      "purchaseDms": {
+        "I": -3,
+        "R": -2,
+        "P": 3
+      },
+      "resaleDms": {
+        "I": -2,
+        "R": -1,
+        "P": 3
+      },
+      "quantity": "2D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "45",
+      "name": "Tools",
+      "basePriceCr": 10000,
+      "purchaseDms": {
+        "I": -3,
+        "R": -2,
+        "P": 3
+      },
+      "resaleDms": {
+        "I": -2,
+        "R": -1,
+        "P": 3
+      },
+      "quantity": "2D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "46",
+      "name": "Body Armor",
+      "basePriceCr": 50000,
+      "purchaseDms": {
+        "I": -1,
+        "R": -3,
+        "P": 3
+      },
+      "resaleDms": {
+        "I": -2,
+        "R": 1,
+        "P": 4
+      },
+      "quantity": "2D",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "51",
+      "name": "Aircraft",
+      "basePriceCr": 1000000,
+      "purchaseDms": {
+        "I": -4,
+        "R": -3
+      },
+      "resaleDms": {
+        "NI": 2,
+        "P": 1
+      },
+      "quantity": "1D",
+      "quantityUnit": "each",
+      "notes": "Quantity per each single item (not tons)."
+    },
+    {
+      "die": "52",
+      "name": "Air/raft",
+      "basePriceCr": 6000000,
+      "purchaseDms": {
+        "I": -3,
+        "R": -2
+      },
+      "resaleDms": {
+        "NI": 2,
+        "P": 1
+      },
+      "quantity": "1D",
+      "quantityUnit": "each",
+      "notes": "Quantity per each single item (not tons)."
+    },
+    {
+      "die": "53",
+      "name": "Computers",
+      "basePriceCr": 10000000,
+      "purchaseDms": {
+        "I": -2,
+        "R": -2
+      },
+      "resaleDms": {
+        "NI": 2,
+        "P": 1,
+        "A": -3
+      },
+      "quantity": "1D",
+      "quantityUnit": "each",
+      "notes": "Quantity per each single item (not tons)."
+    },
+    {
+      "die": "54",
+      "name": "All Terrain Vehicles",
+      "basePriceCr": 3000000,
+      "purchaseDms": {
+        "I": -2,
+        "R": -2
+      },
+      "resaleDms": {
+        "NI": 2,
+        "P": 1,
+        "A": 1
+      },
+      "quantity": "1D",
+      "quantityUnit": "each",
+      "notes": "Quantity per each single item (not tons)."
+    },
+    {
+      "die": "55",
+      "name": "Armored Vehicles",
+      "basePriceCr": 7000000,
+      "purchaseDms": {
+        "I": -5,
+        "R": -2,
+        "P": 4
+      },
+      "resaleDms": {
+        "NA": -2,
+        "A": 2,
+        "R": 1
+      },
+      "quantity": "1D",
+      "quantityUnit": "each",
+      "notes": "Quantity per each single item (not tons)."
+    },
+    {
+      "die": "56",
+      "name": "Farm Machinery",
+      "basePriceCr": 150000,
+      "purchaseDms": {
+        "I": -5,
+        "R": -2
+      },
+      "resaleDms": {
+        "A": 5,
+        "NA": -8,
+        "P": 1
+      },
+      "quantity": "1D",
+      "quantityUnit": "each",
+      "notes": "Quantity per each single item (not tons)."
+    },
+    {
+      "die": "61",
+      "name": "Electronics Parts",
+      "basePriceCr": 100000,
+      "purchaseDms": {
+        "I": -4,
+        "R": -3
+      },
+      "resaleDms": {
+        "NI": 2,
+        "P": 1
+      },
+      "quantity": "1Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "62",
+      "name": "Mechanical Parts",
+      "basePriceCr": 70000,
+      "purchaseDms": {
+        "I": -5,
+        "R": -3
+      },
+      "resaleDms": {
+        "NI": 3,
+        "A": 2
+      },
+      "quantity": "1Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "63",
+      "name": "Cybernetic Parts",
+      "basePriceCr": 250000,
+      "purchaseDms": {
+        "I": -4,
+        "R": -1
+      },
+      "resaleDms": {
+        "NI": 4,
+        "A": 1,
+        "NA": 2
+      },
+      "quantity": "1Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "64",
+      "name": "Computer Parts",
+      "basePriceCr": 150000,
+      "purchaseDms": {
+        "I": -5,
+        "R": -3
+      },
+      "resaleDms": {
+        "NI": 3,
+        "A": 1,
+        "NA": 2
+      },
+      "quantity": "1Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "65",
+      "name": "Machine Tools",
+      "basePriceCr": 750000,
+      "purchaseDms": {
+        "I": -5,
+        "R": -4
+      },
+      "resaleDms": {
+        "NI": 3,
+        "A": 1,
+        "NA": 2
+      },
+      "quantity": "1Dx5",
+      "quantityUnit": "tons",
+      "notes": null
+    },
+    {
+      "die": "66",
+      "name": "Vacc Suits",
+      "basePriceCr": 400000,
+      "purchaseDms": {
+        "NA": -5,
+        "I": -3,
+        "R": -1
+      },
+      "resaleDms": {
+        "NA": -1,
+        "NI": 2,
+        "P": 1
+      },
+      "quantity": "1Dx5",
+      "quantityUnit": "tons",
+      "notes": "Text says items 51-56 are per each; footnote also lists 66 with tons formula 1Dx5 — table footnote: 11-46 and 61-66 in tons; 51-56 per each. Using tons per table footnote."
+    }
+  ],
+  "actualValue": {
+    "2": 40,
+    "3": 50,
+    "4": 70,
+    "5": 80,
+    "6": 90,
+    "7": 100,
+    "8": 110,
+    "9": 120,
+    "10": 130,
+    "11": 150,
+    "12": 170,
+    "13": 200,
+    "14": 300,
+    "15": 400
+  }
+}

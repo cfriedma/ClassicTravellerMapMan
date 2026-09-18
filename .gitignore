@@ -42,3 +42,6 @@ yarn-error.log
 # System Files
 .DS_Store
 Thumbs.db
+
+# Local game-data spreadsheets (converted JSON lives in src/assets/data)
+.gameinfo/

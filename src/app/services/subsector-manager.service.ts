@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Subsector } from '../models/subsector';
+import { World } from '../models/world';
 import { SubsectorGenerator } from '../features/worldgen/subsectorgenerator';
 
 export interface SubsectorData {
@@ -94,6 +95,16 @@ export class SubsectorManagerService {
     }
     
     return subsector || null;
+  }
+
+  /**
+   * Writes the current in-memory subsector collection to localStorage.
+   */
+  persistCurrentSubsector(): void {
+    const current = this.currentSubsectorSubject.value;
+    if (current) {
+      this.saveSubsector(current);
+    }
   }
 
   /**
@@ -209,7 +220,7 @@ export class SubsectorManagerService {
         hexCopy.world = {
           ...hex.world,
           // Convert space lane hex references to indices to avoid circular references
-          spaceLanes: hex.world.spaceLanes.map(connectedHex => 
+          spaceLanes: (hex.world.spaceLanes || []).map(connectedHex =>
             subsector.sectorHexes.indexOf(connectedHex)
           ).filter(index => index !== -1) // Remove invalid references
         };
@@ -237,9 +248,8 @@ export class SubsectorManagerService {
         if (hexData.world) {
           // Restore the world data but exclude circular space lane references
           const worldData = { ...hexData.world };
-          // Remove space lanes to avoid circular references - they'll be rebuilt on display
           delete worldData.spaceLanes;
-          subsector.sectorHexes[i].world = worldData;
+          subsector.sectorHexes[i].world = World.fromData(worldData);
         }
         if (hexData.worldGenerationChanceModifier !== undefined) {
           subsector.sectorHexes[i].worldGenerationChanceModifier = hexData.worldGenerationChanceModifier;

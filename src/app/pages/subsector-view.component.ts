@@ -5,11 +5,12 @@ import { Subject, takeUntil } from 'rxjs';
 import { SubsectorManagerService, SubsectorData } from '../services/subsector-manager.service';
 import { SectorHex } from '../models/sectorhex';
 import { World, StarportType } from '../models/world';
+import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-panel.component';
 
 @Component({
   selector: 'app-subsector-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PlanetMarketPanelComponent],
   template: `
     <div class="subsector-container" *ngIf="subsectorData; else notFound">
       <!-- Header -->
@@ -45,86 +46,96 @@ import { World, StarportType } from '../models/world';
         </div>
 
         <!-- World Detail Panel -->
-        <div class="world-detail-panel" *ngIf="selectedHex && selectedHex.world">
-          <div class="panel-header">
-            <h3>{{ getHexCoordinates(selectedHexIndex) }} - World Details</h3>
-            <button class="btn btn-close" (click)="clearSelection()">×</button>
-          </div>
-          
-          <div class="panel-content">
-            <div class="detail-grid">
-              <div class="detail-item">
-                <label>Starport:</label>
-                <span class="starport-{{ selectedHex.world.starportType }}">
-                  {{ selectedHex.world.starportType }} - {{ getStarportDescription(selectedHex.world.starportType) }}
-                </span>
-              </div>
-              
-              <div class="detail-item">
-                <label>Size:</label>
-                <span>{{ selectedHex.world.planetSize.key }} ({{ selectedHex.world.planetSize.label }})</span>
-              </div>
-              
-              <div class="detail-item">
-                <label>Atmosphere:</label>
-                <span>{{ selectedHex.world.planetAtmosphere.key }} ({{ selectedHex.world.planetAtmosphere.label }})</span>
-              </div>
-              
-              <div class="detail-item">
-                <label>Hydrographics:</label>
-                <span>{{ selectedHex.world.planetHydrographics.key }} ({{ selectedHex.world.planetHydrographics.label }})</span>
-              </div>
-              
-              <div class="detail-item">
-                <label>Population:</label>
-                <span>{{ selectedHex.world.planetPopulation.key }} ({{ selectedHex.world.planetPopulation.label }})</span>
-              </div>
-              
-              <div class="detail-item">
-                <label>Government:</label>
-                <span>{{ selectedHex.world.planetGovernment.key }} ({{ selectedHex.world.planetGovernment.label }})</span>
-              </div>
-              
-              <div class="detail-item">
-                <label>Law Level:</label>
-                <span>{{ selectedHex.world.planetLawLevel.key }} ({{ selectedHex.world.planetLawLevel.label }})</span>
-              </div>
-              
-              <div class="detail-item">
-                <label>Tech Level:</label>
-                <span>{{ selectedHex.world.planetTechLevel }}</span>
-              </div>
-              
-              <div class="detail-item" *ngIf="selectedHex.world.hasNavalBase || selectedHex.world.hasScoutBase">
-                <label>Bases:</label>
-                <span>
-                  <span *ngIf="selectedHex.world.hasNavalBase" class="base-tag naval">Naval Base</span>
-                  <span *ngIf="selectedHex.world.hasScoutBase" class="base-tag scout">Scout Base</span>
-                </span>
-              </div>
-              
-              <div class="detail-item" *ngIf="selectedHex.world.hasPsionicInstitute">
-                <label>Special:</label>
-                <span class="base-tag psionic">Psionic Institute</span>
-              </div>
-              
-              <div class="detail-item" *ngIf="selectedHex.world.psionicPunishment">
-                <label>Psionic Punishment:</label>
-                <span>{{ selectedHex.world.psionicPunishment }}</span>
-              </div>
-              
-              <div class="detail-item" *ngIf="selectedHex.world.spaceLanes.length > 0">
-                <label>Trade Routes:</label>
-                <div class="trade-routes-list">
-                  <div *ngFor="let route of getTradeRouteDetails(selectedHex.world)" class="trade-route">
-                    {{ route.destination }} (Jump-{{ route.distance }})
+        <div class="world-detail-column" *ngIf="selectedHex && selectedHex.world">
+          <div class="world-detail-panel">
+            <div class="panel-header">
+              <h3>{{ getHexCoordinates(selectedHexIndex) }} - World Details</h3>
+              <button class="btn btn-close" (click)="clearSelection()">×</button>
+            </div>
+            
+            <div class="panel-content">
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <label>Starport:</label>
+                  <span class="starport-{{ selectedHex.world.starportType }}">
+                    {{ selectedHex.world.starportType }} - {{ getStarportDescription(selectedHex.world.starportType) }}
+                  </span>
+                </div>
+                
+                <div class="detail-item">
+                  <label>Size:</label>
+                  <span>{{ selectedHex.world.planetSize.key }} ({{ selectedHex.world.planetSize.label }})</span>
+                </div>
+                
+                <div class="detail-item">
+                  <label>Atmosphere:</label>
+                  <span>{{ selectedHex.world.planetAtmosphere.key }} ({{ selectedHex.world.planetAtmosphere.label }})</span>
+                </div>
+                
+                <div class="detail-item">
+                  <label>Hydrographics:</label>
+                  <span>{{ selectedHex.world.planetHydrographics.key }} ({{ selectedHex.world.planetHydrographics.label }})</span>
+                </div>
+                
+                <div class="detail-item">
+                  <label>Population:</label>
+                  <span>{{ selectedHex.world.planetPopulation.key }} ({{ selectedHex.world.planetPopulation.label }})</span>
+                </div>
+                
+                <div class="detail-item">
+                  <label>Government:</label>
+                  <span>{{ selectedHex.world.planetGovernment.key }} ({{ selectedHex.world.planetGovernment.label }})</span>
+                </div>
+                
+                <div class="detail-item">
+                  <label>Law Level:</label>
+                  <span>{{ selectedHex.world.planetLawLevel.key }} ({{ selectedHex.world.planetLawLevel.label }})</span>
+                </div>
+                
+                <div class="detail-item">
+                  <label>Tech Level:</label>
+                  <span>{{ selectedHex.world.planetTechLevel }}</span>
+                </div>
+                
+                <div class="detail-item" *ngIf="selectedHex.world.hasNavalBase || selectedHex.world.hasScoutBase">
+                  <label>Bases:</label>
+                  <span>
+                    <span *ngIf="selectedHex.world.hasNavalBase" class="base-tag naval">Naval Base</span>
+                    <span *ngIf="selectedHex.world.hasScoutBase" class="base-tag scout">Scout Base</span>
+                  </span>
+                </div>
+                
+                <div class="detail-item" *ngIf="selectedHex.world.hasPsionicInstitute">
+                  <label>Special:</label>
+                  <span class="base-tag psionic">Psionic Institute</span>
+                </div>
+                
+                <div class="detail-item" *ngIf="selectedHex.world.psionicPunishment">
+                  <label>Psionic Punishment:</label>
+                  <span>{{ selectedHex.world.psionicPunishment }}</span>
+                </div>
+                
+                <div class="detail-item" *ngIf="selectedHex.world.spaceLanes.length > 0">
+                  <label>Trade Routes:</label>
+                  <div class="trade-routes-list">
+                    <div *ngFor="let route of getTradeRouteDetails(selectedHex.world)" class="trade-route">
+                      {{ route.destination }} (Jump-{{ route.distance }})
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          <button type="button" class="btn-market" (click)="openMarket()">Equipment &amp; Market</button>
         </div>
       </div>
+
+      <app-planet-market-panel
+        *ngIf="marketWorld as world"
+        [world]="world"
+        [hexLabel]="getHexCoordinates(selectedHexIndex)"
+        (closed)="closeMarket()"
+      ></app-planet-market-panel>
     </div>
 
     <ng-template #notFound>
@@ -235,15 +246,21 @@ import { World, StarportType } from '../models/world';
       background: #fafafa;
     }
 
-    .world-detail-panel {
+    .world-detail-column {
       width: 400px;
       min-width: 400px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .world-detail-panel {
       background: white;
       border-radius: 12px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
       max-height: 700px;
       overflow-y: auto;
-      flex-shrink: 0;
     }
 
     .panel-header {
@@ -345,6 +362,21 @@ import { World, StarportType } from '../models/world';
       border-left: 3px solid #2196f3;
     }
 
+    .btn-market {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      width: 100%;
+    }
+
+    .btn-market:hover {
+      box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
+    }
+
     .starport-A { color: #28a745; font-weight: bold; }
     .starport-B { color: #17a2b8; font-weight: bold; }
     .starport-C { color: #ffc107; font-weight: bold; }
@@ -409,8 +441,10 @@ import { World, StarportType } from '../models/world';
         flex-direction: column;
       }
 
+      .world-detail-column,
       .world-detail-panel {
         width: 100%;
+        min-width: 0;
       }
 
       .hex-grid {
@@ -431,6 +465,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   subsectorData: SubsectorData | null = null;
   selectedHexIndex = -1;
   selectedHex: SectorHex | null = null;
+  marketOpen = false;
   
   // Canvas properties
   canvasWidth = 1100;
@@ -487,13 +522,34 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   selectHex(index: number): void {
     this.selectedHexIndex = index;
     this.selectedHex = this.subsectorData?.subsector.sectorHexes[index] || null;
+    if (!this.selectedHex?.world) {
+      this.marketOpen = false;
+    }
     this.drawSubsector(); // Redraw to show selection
   }
 
   clearSelection(): void {
     this.selectedHexIndex = -1;
     this.selectedHex = null;
+    this.marketOpen = false;
     this.drawSubsector(); // Redraw to clear selection
+  }
+
+  openMarket(): void {
+    if (this.selectedHex?.world) {
+      this.marketOpen = true;
+    }
+  }
+
+  closeMarket(): void {
+    this.marketOpen = false;
+  }
+
+  get marketWorld(): World | null {
+    if (!this.marketOpen || !this.selectedHex?.world) {
+      return null;
+    }
+    return this.selectedHex.world;
   }
 
   onCanvasClick(event: MouseEvent): void {
