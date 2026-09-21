@@ -3,11 +3,10 @@ import { BehaviorSubject } from 'rxjs';
 import {
   AppSettings,
   DEFAULT_SETTINGS,
-  MAP_SCALE_MAX,
-  MAP_SCALE_MIN,
-  PriceSource,
-  ThemeName
+  ThemeName,
+  normalizeAppSettings
 } from '../models/settings';
+import { cloneGenerationOptions } from '../models/generation-options';
 
 @Injectable({
   providedIn: 'root'
@@ -36,11 +35,11 @@ export class SettingsService {
     try {
       const raw = localStorage.getItem(this.STORAGE_KEY);
       if (!raw) {
-        return { ...DEFAULT_SETTINGS };
+        return this.normalize({ ...DEFAULT_SETTINGS });
       }
       return this.normalize({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
     } catch {
-      return { ...DEFAULT_SETTINGS };
+      return this.normalize({ ...DEFAULT_SETTINGS });
     }
   }
 
@@ -48,22 +47,11 @@ export class SettingsService {
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(settings));
   }
 
-  private normalize(settings: AppSettings): AppSettings {
-    const priceSource: PriceSource = ['base', 'purchase', 'resale'].includes(settings.priceSource)
-      ? settings.priceSource
-      : DEFAULT_SETTINGS.priceSource;
-    const theme: ThemeName = settings.theme === 'dark' ? 'dark' : 'light';
-    const mapScale = Math.min(
-      MAP_SCALE_MAX,
-      Math.max(MAP_SCALE_MIN, Number(settings.mapScale) || DEFAULT_SETTINGS.mapScale)
-    );
-
+  private normalize(settings: Partial<AppSettings> & Record<string, unknown>): AppSettings {
+    const normalized = normalizeAppSettings(settings);
     return {
-      psionicsEnabled: settings.psionicsEnabled !== false,
-      autoRollBalkanization: settings.autoRollBalkanization === true,
-      priceSource,
-      mapScale,
-      theme
+      ...normalized,
+      lastGenerationOptions: cloneGenerationOptions(normalized.lastGenerationOptions)
     };
   }
 

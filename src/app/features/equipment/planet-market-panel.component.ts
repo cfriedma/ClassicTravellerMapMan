@@ -227,6 +227,7 @@ type MarketTabId = 'trade_goods' | string;
 export class PlanetMarketPanelComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) world!: World;
   @Input() hexLabel = '';
+  @Input() psionicsEnabled = true;
   @Output() closed = new EventEmitter<void>();
 
   activeTab: MarketTabId = 'trade_goods';
@@ -235,14 +236,13 @@ export class PlanetMarketPanelComponent implements OnChanges, OnDestroy {
   categoryTabs = EQUIPMENT_CATEGORY_ORDER;
   tradeClassLabels: string[] = [];
   priceSource: PriceSource = 'purchase';
-  psionicsEnabled = true;
   private destroy$ = new Subject<void>();
 
   get visibleItems(): EquipmentItem[] {
     if (!this.world || this.activeTab === 'trade_goods') {
       return [];
     }
-    return this.catalog.getItemsForCategory(this.activeTab, this.world.planetTechLevel);
+    return this.catalog.getItemsForCategory(this.activeTab, this.world.planetTechLevel, this.psionicsEnabled);
   }
 
   get punishmentLabel(): string | null {
@@ -266,12 +266,7 @@ export class PlanetMarketPanelComponent implements OnChanges, OnDestroy {
     private settingsService: SettingsService
   ) {
     this.settingsService.settings$.pipe(takeUntil(this.destroy$)).subscribe(settings => {
-      const psionicsChanged = this.psionicsEnabled !== settings.psionicsEnabled;
       this.priceSource = settings.priceSource;
-      this.psionicsEnabled = settings.psionicsEnabled;
-      if (this.world && psionicsChanged) {
-        this.refresh();
-      }
     });
   }
 
@@ -281,7 +276,7 @@ export class PlanetMarketPanelComponent implements OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['world'] && this.world) {
+    if ((changes['world'] || changes['psionicsEnabled']) && this.world) {
       this.refresh();
     }
   }

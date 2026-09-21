@@ -1,52 +1,52 @@
 import SectorHex from "./sectorhex";
+import { CLASSIC_COLUMNS, CLASSIC_ROWS, OFF_MAP_TYPE_ID } from "./generation-options";
+import { hexIndex } from "../shared/hex-grid";
+
 export class Subsector {
     name: string;
+    columns: number;
+    rows: number;
     sectorHexes: SectorHex[];
 
-    constructor(name: string) {
+    constructor(name: string, columns: number = CLASSIC_COLUMNS, rows: number = CLASSIC_ROWS, hexTypeIds?: string[]) {
         this.name = name;
-        this.sectorHexes = new Array(80);
-        
-        // First, create all hexes
-        for (let i = 0; i < 80; i++) {
-            this.sectorHexes[i] = new SectorHex();
+        this.columns = columns;
+        this.rows = rows;
+        const count = columns * rows;
+        this.sectorHexes = new Array(count);
+
+        for (let i = 0; i < count; i++) {
+            const hex = new SectorHex();
+            const typeId = hexTypeIds?.[i];
+            if (typeId) {
+                hex.cellTypeId = typeId;
+                hex.onMap = typeId !== OFF_MAP_TYPE_ID;
+            }
+            this.sectorHexes[i] = hex;
         }
-        
-        // Then set up neighbors using proper hex grid logic
-        // Since setNeighbor is symmetrical, only set each connection once
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 10; col++) {
-                const index = row * 10 + col;
+
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < columns; col++) {
+                const index = hexIndex(col, row, columns);
                 const hex = this.sectorHexes[index];
-                
-                // For flat-top hexagons in offset coordinates:
-                // Neighbor directions: 0=E, 1=NE, 2=NW, 3=W, 4=SW, 5=SE
-                // Only set connections in forward directions to avoid duplicates
-                
-                // East (right) - only set if there's a hex to the right
-                if (col < 9) {
+
+                if (col < columns - 1) {
                     hex.setNeighbor(0, this.sectorHexes[index + 1]);
                 }
-                
-                // For odd rows (offset right)
+
                 if (row % 2 === 1) {
-                    // Southeast - only set downward connections
-                    if (row < 7 && col < 9) {
-                        hex.setNeighbor(5, this.sectorHexes[(row + 1) * 10 + col + 1]);
+                    if (row < rows - 1 && col < columns - 1) {
+                        hex.setNeighbor(5, this.sectorHexes[hexIndex(col + 1, row + 1, columns)]);
                     }
-                    // Southwest - only set downward connections
-                    if (row < 7) {
-                        hex.setNeighbor(4, this.sectorHexes[(row + 1) * 10 + col]);
+                    if (row < rows - 1) {
+                        hex.setNeighbor(4, this.sectorHexes[hexIndex(col, row + 1, columns)]);
                     }
                 } else {
-                    // For even rows (not offset)
-                    // Southeast - only set downward connections
-                    if (row < 7) {
-                        hex.setNeighbor(5, this.sectorHexes[(row + 1) * 10 + col]);
+                    if (row < rows - 1) {
+                        hex.setNeighbor(5, this.sectorHexes[hexIndex(col, row + 1, columns)]);
                     }
-                    // Southwest - only set downward connections
-                    if (row < 7 && col > 0) {
-                        hex.setNeighbor(4, this.sectorHexes[(row + 1) * 10 + col - 1]);
+                    if (row < rows - 1 && col > 0) {
+                        hex.setNeighbor(4, this.sectorHexes[hexIndex(col - 1, row + 1, columns)]);
                     }
                 }
             }

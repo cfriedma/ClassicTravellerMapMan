@@ -27,30 +27,6 @@ import { MAP_SCALE_MAX, MAP_SCALE_MIN, MAP_SCALE_STEP, PriceSource, ThemeName } 
       <div class="settings-panel" *ngIf="open" role="dialog" aria-label="Application settings">
         <h2>Settings</h2>
 
-        <label class="toggle-row">
-          <input
-            type="checkbox"
-            [ngModel]="settings.psionicsEnabled"
-            (ngModelChange)="setPsionics($event)"
-          >
-          <span>
-            <strong>Enable psionics</strong>
-            <small>Hide institutes, punishments, and psi drugs when off.</small>
-          </span>
-        </label>
-
-        <label class="toggle-row">
-          <input
-            type="checkbox"
-            [ngModel]="settings.autoRollBalkanization"
-            (ngModelChange)="setBalkanization($event)"
-          >
-          <span>
-            <strong>Auto-roll balkanization</strong>
-            <small>Show extra states on government 7 worlds. Rolls them if missing.</small>
-          </span>
-        </label>
-
         <fieldset>
           <legend>Price source</legend>
           <label class="radio-row" *ngFor="let option of priceOptions">
@@ -230,14 +206,6 @@ export class SettingsMenuComponent {
   toggle(event: Event): void {
     event.stopPropagation();
     this.open = !this.open;
-  }
-
-  setPsionics(value: boolean): void {
-    this.settingsService.patch({ psionicsEnabled: value });
-  }
-
-  setBalkanization(value: boolean): void {
-    this.settingsService.patch({ autoRollBalkanization: value });
   }
 
   setPriceSource(value: PriceSource): void {

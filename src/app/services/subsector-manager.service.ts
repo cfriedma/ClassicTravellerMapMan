@@ -4,11 +4,22 @@ import { Subsector } from '../models/subsector';
 import { World } from '../models/world';
 import { SubsectorGenerator, ensureWorldBalkanStates } from '../features/worldgen/subsectorgenerator';
 import { SettingsService } from './settings.service';
+import {
+  cloneGenerationOptions,
+  createDefaultGenerationOptions,
+  GenerationOptions,
+  LEGACY_COLUMNS,
+  LEGACY_ROWS,
+  normalizeGenerationOptions,
+  OFF_MAP_TYPE_ID,
+  STANDARD_CELL_TYPE_ID
+} from '../models/generation-options';
 
 export interface SubsectorData {
   id: string;
   name: string;
   subsector: Subsector;
+  generationOptions: GenerationOptions;
   createdAt: Date;
   lastAccessed: Date;
 }
@@ -29,6 +40,10 @@ export class SubsectorManagerService {
     this.loadSubsectors();
   }
 
+  get current(): SubsectorData | null {
+    return this.currentSubsectorSubject.value;
+  }
+
   /**
    * Generates a random alphanumeric code for subsector IDs
    */
@@ -44,24 +59,21 @@ export class SubsectorManagerService {
   /**
    * Creates a new subsector with generated worlds and space lanes
    */
-  createNewSubsector(name?: string): SubsectorData {
+  createNewSubsector(name?: string, options?: GenerationOptions): SubsectorData {
     const id = this.generateSubsectorId();
     const generator = new SubsectorGenerator();
+    const generationOptions = normalizeGenerationOptions(
+      options ?? this.settings.snapshot.lastGenerationOptions
+    );
     
-    // Initialize and generate the subsector
-    const settings = this.settings.snapshot;
-    generator.initializeSubsector();
-    generator.generateWorlds({
-      psionicsEnabled: settings.psionicsEnabled,
-      autoRollBalkanization: settings.autoRollBalkanization
-    });
+    generator.initializeSubsector(generationOptions);
+    generator.generateWorlds(generationOptions);
     generator.generateSpaceLanes();
     
     if (!generator.subsector) {
       throw new Error('Failed to generate subsector');
     }
 
-    // Set the name if provided, otherwise use default
     if (name && name.trim()) {
       generator.subsector.name = name.trim();
     } else {
@@ -72,15 +84,14 @@ export class SubsectorManagerService {
       id,
       name: generator.subsector.name,
       subsector: generator.subsector,
+      generationOptions: cloneGenerationOptions(generationOptions),
       createdAt: new Date(),
       lastAccessed: new Date()
     };
 
-    // Save to storage
     this.saveSubsector(subsectorData);
-    
-    // Update current subsector
     this.currentSubsectorSubject.next(subsectorData);
+    this.settings.patch({ lastGenerationOptions: cloneGenerationOptions(generationOptions) });
 
     return subsectorData;
   }
@@ -93,7 +104,6 @@ export class SubsectorManagerService {
     const subsector = subsectors.find(s => s.id === id);
     
     if (subsector) {
-      // Update last accessed time
       subsector.lastAccessed = new Date();
       this.saveSubsector(subsector);
       this.currentSubsectorSubject.next(subsector);
@@ -162,7 +172,6 @@ export class SubsectorManagerService {
       this.subsectorsSubject.next([...subsectors]);
       this.saveToStorage();
       
-      // If this was the current subsector, clear it
       const current = this.currentSubsectorSubject.value;
       if (current && current.id === id) {
         this.currentSubsectorSubject.next(null);
@@ -199,13 +208,7 @@ export class SubsectorManagerService {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (stored) {
         const data = JSON.parse(stored);
-        // Convert date strings back to Date objects
-        const subsectors = data.map((item: any) => ({
-          ...item,
-          createdAt: new Date(item.createdAt),
-          lastAccessed: new Date(item.lastAccessed),
-          subsector: this.deserializeSubsector(item.subsector)
-        }));
+        const subsectors = data.map((item: any) => this.deserializeSubsectorData(item));
         this.subsectorsSubject.next(subsectors);
       }
     } catch (error) {
@@ -220,9 +223,9 @@ export class SubsectorManagerService {
   private saveToStorage(): void {
     try {
       const subsectors = this.subsectorsSubject.value;
-      // Create a serializable copy without circular references
       const serializableSubsectors = subsectors.map(subsectorData => ({
         ...subsectorData,
+        generationOptions: cloneGenerationOptions(subsectorData.generationOptions),
         subsector: this.serializeSubsector(subsectorData.subsector)
       }));
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(serializableSubsectors));
@@ -235,19 +238,20 @@ export class SubsectorManagerService {
    * Creates a serializable version of a subsector without circular references
    */
   private serializeSubsector(subsector: Subsector): any {
-    const serializedHexes = subsector.sectorHexes.map((hex, index) => {
+    const serializedHexes = subsector.sectorHexes.map((hex) => {
       const hexCopy: any = {
         worldGenerationChanceModifier: hex.worldGenerationChanceModifier,
-        hasGasGiant: hex.hasGasGiant
+        hasGasGiant: hex.hasGasGiant,
+        onMap: hex.onMap,
+        cellTypeId: hex.cellTypeId
       };
       
       if (hex.world) {
         hexCopy.world = {
           ...hex.world,
-          // Convert space lane hex references to indices to avoid circular references
           spaceLanes: (hex.world.spaceLanes || []).map(connectedHex =>
             subsector.sectorHexes.indexOf(connectedHex)
-          ).filter(index => index !== -1) // Remove invalid references
+          ).filter(index => index !== -1)
         };
       }
       
@@ -256,7 +260,20 @@ export class SubsectorManagerService {
 
     return {
       name: subsector.name,
+      columns: subsector.columns,
+      rows: subsector.rows,
       sectorHexes: serializedHexes
+    };
+  }
+
+  private deserializeSubsectorData(item: any): SubsectorData {
+    const subsector = this.deserializeSubsector(item.subsector);
+    return {
+      ...item,
+      createdAt: new Date(item.createdAt),
+      lastAccessed: new Date(item.lastAccessed),
+      subsector,
+      generationOptions: this.inferGenerationOptions(item, subsector)
     };
   }
 
@@ -264,14 +281,29 @@ export class SubsectorManagerService {
    * Reconstructs a Subsector object from stored data
    */
   private deserializeSubsector(data: any): Subsector {
-    const subsector = new Subsector(data.name);
+    const columns = Number.isInteger(data?.columns) && data.columns > 0
+      ? data.columns
+      : LEGACY_COLUMNS;
+    const rows = Number.isInteger(data?.rows) && data.rows > 0
+      ? data.rows
+      : LEGACY_ROWS;
+    const hexTypeIds = Array.isArray(data?.sectorHexes)
+      ? data.sectorHexes.map((hexData: any, index: number) => {
+          if (hexData?.cellTypeId) {
+            return hexData.cellTypeId;
+          }
+          if (hexData?.onMap === false) {
+            return OFF_MAP_TYPE_ID;
+          }
+          return STANDARD_CELL_TYPE_ID;
+        })
+      : undefined;
+    const subsector = new Subsector(data?.name ?? 'Unnamed Subsector', columns, rows, hexTypeIds);
     
-    // The constructor already creates the sectorHexes array, we need to restore the data
     if (data.sectorHexes && Array.isArray(data.sectorHexes)) {
       for (let i = 0; i < data.sectorHexes.length && i < subsector.sectorHexes.length; i++) {
         const hexData = data.sectorHexes[i];
         if (hexData.world) {
-          // Restore the world data but exclude circular space lane references
           const worldData = { ...hexData.world };
           delete worldData.spaceLanes;
           subsector.sectorHexes[i].world = World.fromData(worldData);
@@ -282,13 +314,47 @@ export class SubsectorManagerService {
         if (hexData.hasGasGiant !== undefined) {
           subsector.sectorHexes[i].hasGasGiant = hexData.hasGasGiant;
         }
+        if (hexData.onMap !== undefined) {
+          subsector.sectorHexes[i].onMap = hexData.onMap !== false;
+        }
+        if (hexData.cellTypeId) {
+          subsector.sectorHexes[i].cellTypeId = hexData.cellTypeId;
+          subsector.sectorHexes[i].onMap = hexData.cellTypeId !== OFF_MAP_TYPE_ID;
+        }
       }
       
-      // Rebuild space lane connections after all worlds are loaded
       this.rebuildSpaceLanes(subsector, data.sectorHexes);
     }
     
     return subsector;
+  }
+
+  private inferGenerationOptions(item: any, subsector: Subsector): GenerationOptions {
+    if (item.generationOptions) {
+      return normalizeGenerationOptions({
+        ...item.generationOptions,
+        columns: item.generationOptions.columns ?? subsector.columns,
+        rows: item.generationOptions.rows ?? subsector.rows
+      });
+    }
+
+    const hexTypeIds = subsector.sectorHexes.map(hex =>
+      hex.onMap === false ? OFF_MAP_TYPE_ID : (hex.cellTypeId || STANDARD_CELL_TYPE_ID)
+    );
+    const hasBalkanStates = subsector.sectorHexes.some(hex => !!hex.world?.balkanStates?.length);
+    return normalizeGenerationOptions({
+      columns: subsector.columns,
+      rows: subsector.rows,
+      cellTypes: [{
+        id: STANDARD_CELL_TYPE_ID,
+        name: 'Standard',
+        color: '#667eea',
+        occurrence: 4
+      }],
+      hexTypeIds,
+      psionicsEnabled: true,
+      autoRollBalkanization: hasBalkanStates
+    });
   }
 
   /**
@@ -302,10 +368,8 @@ export class SubsectorManagerService {
       if (hexData.world && hexData.world.spaceLanes && currentHex.world) {
         currentHex.world.spaceLanes = [];
         
-        // Rebuild connections based on stored indices
         for (const connectionData of hexData.world.spaceLanes) {
           if (typeof connectionData === 'number') {
-            // If stored as index
             const connectedHex = subsector.sectorHexes[connectionData];
             if (connectedHex && connectedHex.world) {
               currentHex.world.spaceLanes.push(connectedHex);

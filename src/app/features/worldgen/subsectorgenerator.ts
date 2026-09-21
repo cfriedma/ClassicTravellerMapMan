@@ -2,20 +2,22 @@ import { SectorHex } from "src/app/models/sectorhex";
 import { Subsector } from "src/app/models/subsector";
 import { World, StarportType, PlanetProperty, BalkanState, createPlanetSize, createPlanetAtmosphere, createPlanetHydrographics, createPlanetPopulation, createPlanetGovernment, createPlanetLawLevel, psionicPunishmentFromRoll, PsionicPunishment } from "src/app/models/world";
 import { DiceUtils } from "src/app/shared/dice-utils";
-
-export interface WorldGenerationOptions {
-    psionicsEnabled?: boolean;
-    autoRollBalkanization?: boolean;
-}
+import {
+    createDefaultGenerationOptions,
+    GenerationOptions,
+    OFF_MAP_TYPE_ID,
+    WorldOccurrence,
+    occurrenceForHex
+} from "src/app/models/generation-options";
 
 export class SubsectorGenerator {
     subsector?: Subsector | null;
     constructor(subsector: Subsector | null = null) {
         this.subsector = subsector;
     }
-    initializeSubsector()
+    initializeSubsector(options: GenerationOptions = createDefaultGenerationOptions())
     {
-        this.subsector = new Subsector("Unnamed Subsector");
+        this.subsector = new Subsector("Unnamed Subsector", options.columns, options.rows, options.hexTypeIds);
     }
     changeHexsWorldChance(locations: number[], modifier: number)
     {
@@ -29,19 +31,27 @@ export class SubsectorGenerator {
             this.subsector.sectorHexes[location].worldGenerationChanceModifier += modifier;
         }
     }
-    generateWorlds(options: WorldGenerationOptions = {})
+    generateWorlds(options: GenerationOptions = createDefaultGenerationOptions())
     {
         if (this.subsector === undefined || this.subsector === null) {
             throw new Error("Subsector not initialized");
         }
         const psionicsEnabled = options.psionicsEnabled !== false;
         const autoRollBalkanization = options.autoRollBalkanization === true;
-        for (let hex of this.subsector.sectorHexes) {
+        for (let index = 0; index < this.subsector.sectorHexes.length; index++) {
+            const hex = this.subsector.sectorHexes[index];
             // Generation may be run more than once on the same subsector.
             hex.world = null;
             hex.hasGasGiant = false;
 
-            if (DiceUtils.rollSingleDiceCheck(4, hex.worldGenerationChanceModifier)) {
+            hex.cellTypeId = options.hexTypeIds[index] ?? hex.cellTypeId;
+            const occurrence = occurrenceForHex(options, index);
+            if (occurrence === OFF_MAP_TYPE_ID) {
+                hex.onMap = false;
+                continue;
+            }
+            hex.onMap = true;
+            if (this.shouldPlaceWorld(occurrence, hex.worldGenerationChanceModifier)) {
                 // Classic Traveller systems contain a gas giant on a roll of 10 or less.
                 hex.hasGasGiant = DiceUtils.standardRoll() <= 10;
                 const starportRoll = DiceUtils.standardRoll();
@@ -230,6 +240,16 @@ export class SubsectorGenerator {
             }
         }
         
+    }
+
+    private shouldPlaceWorld(occurrence: WorldOccurrence, modifier: number): boolean {
+        if (occurrence === 'always') {
+            return true;
+        }
+        if (occurrence === 'never') {
+            return false;
+        }
+        return DiceUtils.rollSingleDiceCheck(occurrence, modifier);
     }
 
     private findNeighborsByDistance(startHex: SectorHex, maxDistance: number): SectorHex[][] {

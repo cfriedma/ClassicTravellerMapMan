@@ -8,6 +8,7 @@ import { World, StarportType } from '../models/world';
 import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-panel.component';
 import { SettingsMenuComponent } from '../shared/settings-menu.component';
 import { SettingsService } from '../services/settings.service';
+import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAtPosition, hexRow } from '../shared/hex-grid';
 
 @Component({
   selector: 'app-subsector-view',
@@ -149,6 +150,7 @@ import { SettingsService } from '../services/settings.service';
         *ngIf="marketWorld as world"
         [world]="world"
         [hexLabel]="getHexCoordinates(selectedHexIndex)"
+        [psionicsEnabled]="psionicsEnabled"
         (closed)="closeMarket()"
       ></app-planet-market-panel>
     </div>
@@ -509,12 +511,20 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   private mapScale = 1;
   private hoveredHexIndex = -1;
 
+  get columns(): number {
+    return this.subsectorData?.subsector.columns ?? 8;
+  }
+
+  get rows(): number {
+    return this.subsectorData?.subsector.rows ?? 10;
+  }
+
   get canvasWidth(): number {
-    return Math.round(1100 * this.mapScale);
+    return hexCanvasSize(this.columns, this.rows, this.hexWidth, this.hexHeight, this.mapScale).width;
   }
 
   get canvasHeight(): number {
-    return Math.round(750 * this.mapScale);
+    return hexCanvasSize(this.columns, this.rows, this.hexWidth, this.hexHeight, this.mapScale).height;
   }
 
   get hexRadius(): number {
@@ -538,12 +548,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
 
   ngOnInit(): void {
     this.settingsService.settings$.pipe(takeUntil(this.destroy$)).subscribe(settings => {
-      this.psionicsEnabled = settings.psionicsEnabled;
-      this.autoRollBalkanization = settings.autoRollBalkanization;
       this.mapScale = settings.mapScale;
-      if (settings.autoRollBalkanization) {
-        this.subsectorManager.ensureBalkanization(this.subsectorData);
-      }
       this.redrawCanvas();
     });
 
@@ -576,9 +581,8 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   private loadSubsector(id: string): void {
     this.subsectorData = this.subsectorManager.getSubsector(id);
     if (this.subsectorData) {
-      if (this.autoRollBalkanization) {
-        this.subsectorManager.ensureBalkanization(this.subsectorData);
-      }
+      this.psionicsEnabled = this.subsectorData.generationOptions.psionicsEnabled;
+      this.autoRollBalkanization = this.subsectorData.generationOptions.autoRollBalkanization;
       if (this.ctx) {
         this.drawSubsector();
       }
@@ -686,14 +690,13 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     this.drawTradeLanes();
     
     // Draw all hexes
-    for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 10; col++) {
-        const index = row * 10 + col;
-        const hex = this.subsectorData.subsector.sectorHexes[index];
-        const position = this.getCanvasHexPosition(index);
-        
-        this.drawHex(position.x, position.y, index, hex);
+    for (let i = 0; i < this.subsectorData.subsector.sectorHexes.length; i++) {
+      const hex = this.subsectorData.subsector.sectorHexes[i];
+      if (!hex.onMap) {
+        continue;
       }
+      const position = this.getCanvasHexPosition(i);
+      this.drawHex(position.x, position.y, i, hex);
     }
   }
 
@@ -843,35 +846,22 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   private getCanvasHexPosition(index: number): { x: number, y: number } {
-    const col = index % 10;
-    const row = Math.floor(index / 10);
-    
-    const offsetX = this.scaled(80);
-    const offsetY = this.scaled(80);
-    
-    const horizontalSpacing = this.hexWidth + this.scaled(15);
-    const verticalSpacing = this.hexHeight * 0.9;
-    
-    const x = offsetX + col * horizontalSpacing + (row % 2) * (horizontalSpacing / 2);
-    const y = offsetY + row * verticalSpacing;
-    
-    return { x, y };
+    return hexCanvasPosition(index, this.columns, this.hexWidth, this.hexHeight, this.mapScale);
   }
 
   private getHexAtPosition(canvasX: number, canvasY: number): number {
     if (!this.subsectorData) return -1;
-    
-    // Check each hex to see if the point is inside
-    for (let i = 0; i < 80; i++) {
-      const pos = this.getCanvasHexPosition(i);
-      const distance = Math.sqrt(Math.pow(canvasX - pos.x, 2) + Math.pow(canvasY - pos.y, 2));
-      
-      if (distance <= this.hexRadius) {
-        return i;
-      }
-    }
-    
-    return -1;
+    return hexIndexAtPosition(
+      canvasX,
+      canvasY,
+      this.subsectorData.subsector.sectorHexes.length,
+      this.columns,
+      this.hexWidth,
+      this.hexHeight,
+      this.hexRadius,
+      this.mapScale,
+      (index) => this.subsectorData!.subsector.sectorHexes[index]?.onMap !== false
+    );
   }
 
   private scaled(value: number): number {
@@ -889,29 +879,26 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   getHexColumn(index: number): number {
-    return (index % 10) + 1;
+    return hexColumn(index, this.columns) + 1;
   }
 
   getHexRow(index: number): number {
-    return Math.floor(index / 10) + 1;
+    return hexRow(index, this.columns) + 1;
   }
 
   private calculateJumpDistance(index1: number, index2: number): number {
-    const col1 = index1 % 10;
-    const row1 = Math.floor(index1 / 10);
-    const col2 = index2 % 10;
-    const row2 = Math.floor(index2 / 10);
+    const col1 = hexColumn(index1, this.columns);
+    const row1 = hexRow(index1, this.columns);
+    const col2 = hexColumn(index2, this.columns);
+    const row2 = hexRow(index2, this.columns);
     
-    // Simple distance calculation (could be more sophisticated for hex grids)
     const dx = Math.abs(col2 - col1);
     const dy = Math.abs(row2 - row1);
     return Math.max(dx, dy);
   }
 
   getHexCoordinates(index: number): string {
-    const col = (index % 10) + 1;
-    const row = Math.floor(index / 10) + 1;
-    return `${col.toString().padStart(2, '0')}${row.toString().padStart(2, '0')}`;
+    return hexCoordinates(index, this.columns);
   }
 
   formatHex(value: number): string {

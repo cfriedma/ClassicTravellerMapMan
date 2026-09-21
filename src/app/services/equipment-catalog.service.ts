@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { EquipmentCatalogData, EquipmentItem, EQUIPMENT_CATEGORY_ORDER, isPsionicItem } from '../models/equipment';
 import { TradeGood, TradeGoodsCatalogData } from '../models/trade-goods';
 import { SettingsService } from './settings.service';
+import { SubsectorManagerService } from './subsector-manager.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,8 @@ export class EquipmentCatalogService {
 
   constructor(
     private http: HttpClient,
-    private settings: SettingsService
+    private settings: SettingsService,
+    private subsectors: SubsectorManagerService
   ) {}
 
   ensureLoaded(): Promise<void> {
@@ -26,8 +28,8 @@ export class EquipmentCatalogService {
     return this.loadPromise;
   }
 
-  getItems(): EquipmentItem[] {
-    return this.filterPsionics(this.items);
+  getItems(psionicsEnabled?: boolean): EquipmentItem[] {
+    return this.filterPsionics(this.items, psionicsEnabled);
   }
 
   getGoods(): TradeGood[] {
@@ -47,12 +49,12 @@ export class EquipmentCatalogService {
     return this.goods.find(good => good.die === die);
   }
 
-  getDrugs(): EquipmentItem[] {
-    return this.getItems().filter(item => item.category === 'drugs');
+  getDrugs(psionicsEnabled?: boolean): EquipmentItem[] {
+    return this.getItems(psionicsEnabled).filter(item => item.category === 'drugs');
   }
 
-  getItemsForCategory(category: string, planetTechLevel: number): EquipmentItem[] {
-    return this.getItems().filter(item =>
+  getItemsForCategory(category: string, planetTechLevel: number, psionicsEnabled?: boolean): EquipmentItem[] {
+    return this.getItems(psionicsEnabled).filter(item =>
       item.category === category && this.isAvailableAtTechLevel(item, planetTechLevel)
     );
   }
@@ -75,10 +77,21 @@ export class EquipmentCatalogService {
     this.actualValue = tradeGoods.actualValue;
   }
 
-  private filterPsionics(items: EquipmentItem[]): EquipmentItem[] {
-    if (this.settings.snapshot.psionicsEnabled) {
+  private filterPsionics(items: EquipmentItem[], psionicsEnabled?: boolean): EquipmentItem[] {
+    if (this.resolvePsionics(psionicsEnabled)) {
       return items;
     }
     return items.filter(item => !isPsionicItem(item));
+  }
+
+  private resolvePsionics(override?: boolean): boolean {
+    if (override !== undefined) {
+      return override;
+    }
+    const current = this.subsectors.current;
+    if (current) {
+      return current.generationOptions.psionicsEnabled;
+    }
+    return this.settings.snapshot.lastGenerationOptions.psionicsEnabled;
   }
 }

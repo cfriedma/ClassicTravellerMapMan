@@ -4,11 +4,17 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SubsectorManagerService, SubsectorData } from '../services/subsector-manager.service';
 import { SettingsMenuComponent } from '../shared/settings-menu.component';
+import { GenerationSetupComponent } from '../shared/generation-setup.component';
+import { SettingsService } from '../services/settings.service';
+import {
+  cloneGenerationOptions,
+  GenerationOptions
+} from '../models/generation-options';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, SettingsMenuComponent],
+  imports: [CommonModule, FormsModule, SettingsMenuComponent, GenerationSetupComponent],
   template: `
     <div class="home-container">
       <header class="hero-section">
@@ -36,16 +42,15 @@ import { SettingsMenuComponent } from '../shared/settings-menu.component';
                 [(ngModel)]="newSubsectorName" 
                 placeholder="Enter a name for your subsector..."
                 maxlength="50"
+                (keyup.enter)="openGenerationSetup()"
               >
             </div>
             
             <button 
               class="btn btn-primary btn-large"
-              (click)="createNewSubsector()"
-              [disabled]="isCreating"
+              (click)="openGenerationSetup()"
             >
-              <span *ngIf="!isCreating">🚀 Generate New Subsector</span>
-              <span *ngIf="isCreating">🔄 Generating...</span>
+              🚀 Generate New Subsector
             </button>
           </div>
         </div>
@@ -135,7 +140,7 @@ import { SettingsMenuComponent } from '../shared/settings-menu.component';
               <div class="info-item">
                 <div class="info-icon">🎲</div>
                 <h3>Generate</h3>
-                <p>Click "Generate New Subsector" to create a random 8x10 hex grid with worlds, starports, and trade routes following Classic Traveller rules.</p>
+                <p>Click "Generate New Subsector" to choose shape, world density, and campaign rules, then create a hex map following Classic Traveller.</p>
               </div>
               
               <div class="info-item">
@@ -154,6 +159,14 @@ import { SettingsMenuComponent } from '../shared/settings-menu.component';
         </div>
       </div>
     </div>
+
+    <app-generation-setup
+      *ngIf="showGenerationSetup"
+      [initialName]="newSubsectorName"
+      [initialOptions]="setupOptions"
+      (cancelled)="closeGenerationSetup()"
+      (confirmed)="onGenerationConfirmed($event)"
+    ></app-generation-setup>
   `,
   styles: [`
     .home-container {
@@ -446,10 +459,13 @@ export class HomeComponent implements OnInit {
   accessError = '';
   isCreating = false;
   isAccessing = false;
+  showGenerationSetup = false;
+  setupOptions: GenerationOptions | null = null;
   recentSubsectors: SubsectorData[] = [];
 
   constructor(
     private subsectorManager: SubsectorManagerService,
+    private settings: SettingsService,
     private router: Router
   ) {}
 
@@ -462,20 +478,31 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  createNewSubsector(): void {
-    if (this.isCreating) return;
-    
+  openGenerationSetup(): void {
+    this.setupOptions = cloneGenerationOptions(this.settings.snapshot.lastGenerationOptions);
+    this.showGenerationSetup = true;
+  }
+
+  closeGenerationSetup(): void {
+    this.showGenerationSetup = false;
+  }
+
+  onGenerationConfirmed(event: { name: string; options: GenerationOptions }): void {
+    if (this.isCreating) {
+      return;
+    }
+
     this.isCreating = true;
-    
     try {
-      const subsectorData = this.subsectorManager.createNewSubsector(this.newSubsectorName);
+      const subsectorData = this.subsectorManager.createNewSubsector(event.name, event.options);
+      this.showGenerationSetup = false;
+      this.newSubsectorName = '';
       this.router.navigate(['/subsector', subsectorData.id]);
     } catch (error) {
       console.error('Error creating subsector:', error);
       alert('Failed to create subsector. Please try again.');
     } finally {
       this.isCreating = false;
-      this.newSubsectorName = '';
     }
   }
 
