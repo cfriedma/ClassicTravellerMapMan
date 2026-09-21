@@ -191,6 +191,9 @@ function collectEvents(world: World, catalog: AnimalEncounterCatalog, psionicsEn
       continue;
     }
     if (event.name === 'Meteor Shower') {
+      if (world.planetAtmosphere.key === 0 || world.planetSize.key === 0) {
+        events.push({ ...event, terrains: null });
+      }
       continue;
     }
     if (event.name === 'Psionic Assaulters') {

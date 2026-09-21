@@ -15,7 +15,7 @@ export class AnimalEncounterService {
   ) {}
 
   async ensureEncounters(world: World): Promise<WorldEncounterState | null> {
-    if (!world.isHabitableForAnimals()) {
+    if (!this.allowsEncounters(world)) {
       return null;
     }
     await this.catalog.ensureLoaded();
@@ -35,7 +35,7 @@ export class AnimalEncounterService {
   }
 
   async rerollEncounters(world: World): Promise<WorldEncounterState | null> {
-    if (!world.isHabitableForAnimals()) {
+    if (!this.allowsEncounters(world)) {
       return null;
     }
     await this.catalog.ensureLoaded();
@@ -52,6 +52,10 @@ export class AnimalEncounterService {
       options?.generateAllEcosystems === true,
       options?.psionicsEnabled !== false
     );
+  }
+
+  private allowsEncounters(world: World): boolean {
+    return world.allowsEncounterTables(this.subsectors.current?.generationOptions.generateAllEcosystems === true);
   }
 
   private shouldHavePsionicAssaulters(world: World): boolean {

@@ -51,9 +51,10 @@ export class SubsectorGenerator {
                 continue;
             }
             hex.onMap = true;
+            // Classic Traveller: 2d6 for 10 or less yields a gas giant in the system,
+            // including hexes with no mainworld.
+            hex.hasGasGiant = DiceUtils.standardRoll() <= 10;
             if (this.shouldPlaceWorld(occurrence, hex.worldGenerationChanceModifier)) {
-                // Classic Traveller systems contain a gas giant on a roll of 10 or less.
-                hex.hasGasGiant = DiceUtils.standardRoll() <= 10;
                 const starportRoll = DiceUtils.standardRoll();
                 let starportType: StarportType = StarportType.X;
                 let hasNavalBase: boolean = false;
@@ -183,6 +184,9 @@ export class SubsectorGenerator {
                 hex.world = world;
             }
         }
+        if (psionicsEnabled && options.guaranteePsionicInstitute) {
+            this.ensurePsionicInstitute();
+        }
     }
 
     generateSpaceLanes() 
@@ -240,6 +244,22 @@ export class SubsectorGenerator {
             }
         }
         
+    }
+
+    private ensurePsionicInstitute(): void {
+        if (this.subsector === undefined || this.subsector === null) {
+            return;
+        }
+        const worlds = this.subsector.sectorHexes
+            .filter(hex => hex.onMap && hex.world)
+            .map(hex => hex.world!);
+        if (worlds.length === 0 || worlds.some(world => world.hasPsionicInstitute)) {
+            return;
+        }
+        const eligible = worlds.filter(world => world.planetPopulation.key >= 9);
+        const pool = eligible.length > 0 ? eligible : worlds;
+        const chosen = pool[Math.floor(Math.random() * pool.length)];
+        chosen.hasPsionicInstitute = true;
     }
 
     private shouldPlaceWorld(occurrence: WorldOccurrence, modifier: number): boolean {

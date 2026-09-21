@@ -13,11 +13,10 @@ export const GRID_ROWS_MAX = 20;
 
 export const MAX_CELL_TYPES = 12;
 
-export type WorldOccurrence = 'always' | 1 | 2 | 3 | 4 | 5 | 6 | 'never';
+export type WorldOccurrence = 'always' | 2 | 3 | 4 | 5 | 6 | 'never';
 
 export const WORLD_OCCURRENCE_STEPS: WorldOccurrence[] = [
   'always',
-  1,
   2,
   3,
   4,
@@ -54,6 +53,7 @@ export interface GenerationOptions {
   cellTypes: HexCellType[];
   hexTypeIds: string[];
   psionicsEnabled: boolean;
+  guaranteePsionicInstitute: boolean;
   autoRollBalkanization: boolean;
   generateAllEcosystems: boolean;
 }
@@ -68,6 +68,7 @@ export function createDefaultGenerationOptions(): GenerationOptions {
     cellTypes: [standard],
     hexTypeIds: Array(columns * rows).fill(standard.id),
     psionicsEnabled: true,
+    guaranteePsionicInstitute: false,
     autoRollBalkanization: false,
     generateAllEcosystems: false
   };
@@ -89,6 +90,7 @@ export function cloneGenerationOptions(options: GenerationOptions): GenerationOp
     cellTypes: options.cellTypes.map(type => ({ ...type })),
     hexTypeIds: [...options.hexTypeIds],
     psionicsEnabled: options.psionicsEnabled,
+    guaranteePsionicInstitute: options.guaranteePsionicInstitute,
     autoRollBalkanization: options.autoRollBalkanization,
     generateAllEcosystems: options.generateAllEcosystems
   };
@@ -151,11 +153,14 @@ export function parseOccurrence(value: unknown): WorldOccurrence {
   if (value === 'always' || value === 'never') {
     return value;
   }
-  if (value === 1 || value === 2 || value === 3 || value === 4 || value === 5 || value === 6) {
+  if (value === 1 || value === '1') {
+    return 'always';
+  }
+  if (value === 2 || value === 3 || value === 4 || value === 5 || value === 6) {
     return value;
   }
-  if (typeof value === 'string' && /^[1-6]$/.test(value)) {
-    return Number(value) as 1 | 2 | 3 | 4 | 5 | 6;
+  if (typeof value === 'string' && /^[2-6]$/.test(value)) {
+    return Number(value) as 2 | 3 | 4 | 5 | 6;
   }
   return 4;
 }
@@ -263,6 +268,7 @@ export function normalizeGenerationOptions(raw: Partial<GenerationOptions> | nul
     cellTypes,
     hexTypeIds,
     psionicsEnabled: raw.psionicsEnabled !== false,
+    guaranteePsionicInstitute: raw.psionicsEnabled !== false && raw.guaranteePsionicInstitute === true,
     autoRollBalkanization: raw.autoRollBalkanization === true,
     generateAllEcosystems: raw.generateAllEcosystems === true
   };

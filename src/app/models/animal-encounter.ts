@@ -156,3 +156,7 @@ export interface WorldEncounterState {
 export function isHabitableForAnimals(atmosphereKey: number): boolean {
   return atmosphereKey >= 2 && atmosphereKey <= 9;
 }
+
+export function worldAllowsEncounterTables(atmosphereKey: number, generateAllEcosystems: boolean): boolean {
+  return generateAllEcosystems || isHabitableForAnimals(atmosphereKey);
+}

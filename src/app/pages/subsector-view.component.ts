@@ -122,11 +122,12 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
                   <span>{{ selectedHex.world.planetTechLevel }}</span>
                 </div>
                 
-                <div class="detail-item" *ngIf="selectedHex.world.hasNavalBase || selectedHex.world.hasScoutBase">
+                <div class="detail-item" *ngIf="selectedHex.world.hasNavalBase || selectedHex.world.hasScoutBase || selectedHex.hasGasGiant">
                   <label>Bases:</label>
                   <span>
                     <span *ngIf="selectedHex.world.hasNavalBase" class="base-tag naval">Naval Base</span>
                     <span *ngIf="selectedHex.world.hasScoutBase" class="base-tag scout">Scout Base</span>
+                    <span *ngIf="selectedHex.hasGasGiant" class="base-tag gas-giant">Gas Giant</span>
                   </span>
                 </div>
                 
@@ -156,9 +157,30 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
             <button
               type="button"
               class="btn-market"
-              *ngIf="selectedHex.world.isHabitableForAnimals()"
+              *ngIf="selectedHex.world.allowsEncounterTables(generateAllEcosystems)"
               (click)="openEncounters()"
             >Encounter Tables</button>
+          </div>
+        </div>
+
+        <div class="world-detail-column" *ngIf="selectedHex && !selectedHex.world && selectedHex.hasGasGiant">
+          <div class="world-detail-panel">
+            <div class="panel-header">
+              <h3>{{ getHexCoordinates(selectedHexIndex) }} - System</h3>
+              <button class="btn btn-close" (click)="clearSelection()">×</button>
+            </div>
+            <div class="panel-content">
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <label>Mainworld:</label>
+                  <span>None</span>
+                </div>
+                <div class="detail-item">
+                  <label>Bases:</label>
+                  <span class="base-tag gas-giant">Gas Giant</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -397,6 +419,11 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
       color: white;
     }
 
+    .base-tag.gas-giant {
+      background: #17a2b8;
+      color: white;
+    }
+
     .base-tag.psionic {
       background: #6f42c1;
       color: white;
@@ -547,6 +574,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   encountersOpen = false;
   psionicsEnabled = true;
   autoRollBalkanization = false;
+  generateAllEcosystems = false;
   private mapScale = 1;
   private hoveredHexIndex = -1;
 
@@ -622,6 +650,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     if (this.subsectorData) {
       this.psionicsEnabled = this.subsectorData.generationOptions.psionicsEnabled;
       this.autoRollBalkanization = this.subsectorData.generationOptions.autoRollBalkanization;
+      this.generateAllEcosystems = this.subsectorData.generationOptions.generateAllEcosystems === true;
       if (this.ctx) {
         this.drawSubsector();
       }
@@ -661,7 +690,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     if (!this.selectedHex?.world) {
       this.marketOpen = false;
       this.encountersOpen = false;
-    } else if (!this.selectedHex.world.isHabitableForAnimals()) {
+    } else if (!this.selectedHex.world.allowsEncounterTables(this.generateAllEcosystems)) {
       this.encountersOpen = false;
     }
     this.drawSubsector(); // Redraw to show selection
@@ -686,7 +715,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   openEncounters(): void {
-    if (this.selectedHex?.world?.isHabitableForAnimals()) {
+    if (this.selectedHex?.world?.allowsEncounterTables(this.generateAllEcosystems)) {
       this.encountersOpen = true;
     }
   }
@@ -703,7 +732,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   get encounterWorld(): World | null {
-    if (!this.encountersOpen || !this.selectedHex?.world?.isHabitableForAnimals()) {
+    if (!this.encountersOpen || !this.selectedHex?.world?.allowsEncounterTables(this.generateAllEcosystems)) {
       return null;
     }
     return this.selectedHex.world;
@@ -820,12 +849,15 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     
     // Draw world info if present
     if (hasWorld) {
-      this.drawWorldInfo(x, y, hex.world);
+      this.drawWorldInfo(x, y, hex);
+    } else if (hex.hasGasGiant) {
+      this.drawMarkerStrip(x, y, [{ letter: 'G', color: '#17a2b8' }]);
     }
   }
 
-  private drawWorldInfo(x: number, y: number, world: any): void {
-    if (!this.ctx) return;
+  private drawWorldInfo(x: number, y: number, hex: SectorHex): void {
+    if (!this.ctx || !hex.world) return;
+    const world = hex.world;
     
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
@@ -844,16 +876,34 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     const uwp2 = `${this.formatHex(world.planetPopulation.key)}${this.formatHex(world.planetGovernment.key)}${this.formatHex(world.planetLawLevel.key)}-${this.formatHex(world.planetTechLevel)}`;
     this.ctx.fillText(uwp2, x, y + this.scaled(14));
     
-    // Bases
-    if (world.hasNavalBase || world.hasScoutBase) {
-      let baseText = '';
-      if (world.hasNavalBase) baseText += 'N';
-      if (world.hasScoutBase) baseText += 'S';
-      
-      this.ctx.font = this.scaledFont(8, 'Arial', true);
-      this.ctx.fillStyle = world.hasNavalBase ? '#dc3545' : '#28a745';
-      this.ctx.fillText(baseText, x, y + this.scaled(24));
+    const markers: { letter: string; color: string }[] = [];
+    if (world.hasNavalBase) markers.push({ letter: 'N', color: '#dc3545' });
+    if (world.hasScoutBase) markers.push({ letter: 'S', color: '#28a745' });
+    if (hex.hasGasGiant) markers.push({ letter: 'G', color: '#17a2b8' });
+    if (this.psionicsEnabled && world.hasPsionicInstitute) {
+      markers.push({ letter: 'I', color: '#6f42c1' });
     }
+
+    this.drawMarkerStrip(x, y + this.scaled(24), markers);
+  }
+
+  private drawMarkerStrip(x: number, y: number, markers: { letter: string; color: string }[]): void {
+    if (!this.ctx || markers.length === 0) {
+      return;
+    }
+
+    this.ctx.font = this.scaledFont(8, 'Arial', true);
+    this.ctx.textAlign = 'left';
+    this.ctx.textBaseline = 'middle';
+    const widths = markers.map(marker => this.ctx!.measureText(marker.letter).width);
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0);
+    let cursor = x - totalWidth / 2;
+    for (let i = 0; i < markers.length; i++) {
+      this.ctx.fillStyle = markers[i].color;
+      this.ctx.fillText(markers[i].letter, cursor, y);
+      cursor += widths[i];
+    }
+    this.ctx.textAlign = 'center';
   }
 
   private drawTradeLanes(): void {

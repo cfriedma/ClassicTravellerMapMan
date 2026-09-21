@@ -1,6 +1,6 @@
 import { SectorHex } from "./sectorhex";
 import { PlanetMarketState, TradeClassCode } from "./planet-market";
-import { WorldEncounterState, isHabitableForAnimals } from "./animal-encounter";
+import { WorldEncounterState, isHabitableForAnimals, worldAllowsEncounterTables } from "./animal-encounter";
 // Define interfaces for properties with both key and label
 export interface PlanetProperty {
     key: number;
@@ -114,6 +114,10 @@ export class World {
 
     isHabitableForAnimals(): boolean {
         return isHabitableForAnimals(this.planetAtmosphere.key);
+    }
+
+    allowsEncounterTables(generateAllEcosystems: boolean): boolean {
+        return worldAllowsEncounterTables(this.planetAtmosphere.key, generateAllEcosystems);
     }
 
     isTaintedAtmosphere(): boolean {

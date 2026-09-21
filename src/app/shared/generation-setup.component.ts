@@ -165,10 +165,18 @@ import {
             </div>
 
             <label class="toggle-row">
-              <input type="checkbox" [(ngModel)]="options.psionicsEnabled">
+              <input type="checkbox" [ngModel]="options.psionicsEnabled" (ngModelChange)="setPsionics($event)">
               <span>
                 <strong>Enable psionics</strong>
                 <small>Hide institutes, punishments, and psi drugs when off.</small>
+              </span>
+            </label>
+
+            <label class="toggle-row nested" *ngIf="options.psionicsEnabled">
+              <input type="checkbox" [(ngModel)]="options.guaranteePsionicInstitute">
+              <span>
+                <strong>Guarantee a psionic institute</strong>
+                <small>Place an institute on one world if none appear from the usual rolls.</small>
               </span>
             </label>
 
@@ -184,7 +192,7 @@ import {
               <input type="checkbox" [(ngModel)]="options.generateAllEcosystems">
               <span>
                 <strong>Generate all ecosystems</strong>
-                <small>Skip UWP biome filtering and build an encounter table for every Book 3 terrain on each habitable world.</small>
+                <small>Skip UWP biome filtering and build an encounter table for every Book 3 terrain on every world, including those that would otherwise have no animal encounters.</small>
               </span>
             </label>
           </div>
@@ -379,6 +387,10 @@ import {
       display: flex;
       gap: 0.55rem;
       cursor: pointer;
+    }
+
+    .toggle-row.nested {
+      margin-left: 1.5rem;
     }
 
     .slider-block {
@@ -640,16 +652,25 @@ export class GenerationSetupComponent implements AfterViewChecked, AfterViewInit
 
   resetClassic(): void {
     const psionicsEnabled = this.options.psionicsEnabled;
+    const guaranteePsionicInstitute = this.options.guaranteePsionicInstitute;
     const autoRollBalkanization = this.options.autoRollBalkanization;
     const generateAllEcosystems = this.options.generateAllEcosystems;
     this.options = createDefaultGenerationOptions();
     this.options.columns = CLASSIC_COLUMNS;
     this.options.rows = CLASSIC_ROWS;
     this.options.psionicsEnabled = psionicsEnabled;
+    this.options.guaranteePsionicInstitute = psionicsEnabled && guaranteePsionicInstitute;
     this.options.autoRollBalkanization = autoRollBalkanization;
     this.options.generateAllEcosystems = generateAllEcosystems;
     this.selectedBrushId = this.options.cellTypes[0].id;
     this.scheduleDraw();
+  }
+
+  setPsionics(value: boolean): void {
+    this.options.psionicsEnabled = value;
+    if (!value) {
+      this.options.guaranteePsionicInstitute = false;
+    }
   }
 
   onPointerDown(event: PointerEvent): void {
