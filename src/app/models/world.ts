@@ -1,5 +1,6 @@
 import { SectorHex } from "./sectorhex";
 import { PlanetMarketState, TradeClassCode } from "./planet-market";
+import { WorldEncounterState, isHabitableForAnimals } from "./animal-encounter";
 // Define interfaces for properties with both key and label
 export interface PlanetProperty {
     key: number;
@@ -27,6 +28,7 @@ export class World {
     psionicPunishment: PsionicPunishment;
     balkanStates?: BalkanState[];
     market?: PlanetMarketState;
+    encounters?: WorldEncounterState;
 
     spaceLanes: SectorHex[];
 
@@ -110,6 +112,14 @@ export class World {
         return this.getTradeClasses().map(code => labels[code]);
     }
 
+    isHabitableForAnimals(): boolean {
+        return isHabitableForAnimals(this.planetAtmosphere.key);
+    }
+
+    isTaintedAtmosphere(): boolean {
+        return [2, 4, 7, 9].includes(this.planetAtmosphere.key);
+    }
+
     isPsionicsPermitted(): boolean {
         return this.hasPsionicInstitute || this.arePsiDrugsLegal();
     }
@@ -136,6 +146,9 @@ export class World {
         );
         if (data.market) {
             world.market = data.market as PlanetMarketState;
+        }
+        if (data.encounters) {
+            world.encounters = data.encounters as WorldEncounterState;
         }
         if (Array.isArray(data.balkanStates)) {
             world.balkanStates = data.balkanStates as BalkanState[];

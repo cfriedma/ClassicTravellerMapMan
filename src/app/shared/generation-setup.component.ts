@@ -179,6 +179,14 @@ import {
                 <small>Show extra states on government 7 worlds. Rolls them at generation.</small>
               </span>
             </label>
+
+            <label class="toggle-row">
+              <input type="checkbox" [(ngModel)]="options.generateAllEcosystems">
+              <span>
+                <strong>Generate all ecosystems</strong>
+                <small>Skip UWP biome filtering and build an encounter table for every Book 3 terrain on each habitable world.</small>
+              </span>
+            </label>
           </div>
 
           <div class="preview-pane">
@@ -633,11 +641,13 @@ export class GenerationSetupComponent implements AfterViewChecked, AfterViewInit
   resetClassic(): void {
     const psionicsEnabled = this.options.psionicsEnabled;
     const autoRollBalkanization = this.options.autoRollBalkanization;
+    const generateAllEcosystems = this.options.generateAllEcosystems;
     this.options = createDefaultGenerationOptions();
     this.options.columns = CLASSIC_COLUMNS;
     this.options.rows = CLASSIC_ROWS;
     this.options.psionicsEnabled = psionicsEnabled;
     this.options.autoRollBalkanization = autoRollBalkanization;
+    this.options.generateAllEcosystems = generateAllEcosystems;
     this.selectedBrushId = this.options.cellTypes[0].id;
     this.scheduleDraw();
   }

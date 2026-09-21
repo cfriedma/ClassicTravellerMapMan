@@ -55,6 +55,7 @@ export interface GenerationOptions {
   hexTypeIds: string[];
   psionicsEnabled: boolean;
   autoRollBalkanization: boolean;
+  generateAllEcosystems: boolean;
 }
 
 export function createDefaultGenerationOptions(): GenerationOptions {
@@ -67,7 +68,8 @@ export function createDefaultGenerationOptions(): GenerationOptions {
     cellTypes: [standard],
     hexTypeIds: Array(columns * rows).fill(standard.id),
     psionicsEnabled: true,
-    autoRollBalkanization: false
+    autoRollBalkanization: false,
+    generateAllEcosystems: false
   };
 }
 
@@ -87,7 +89,8 @@ export function cloneGenerationOptions(options: GenerationOptions): GenerationOp
     cellTypes: options.cellTypes.map(type => ({ ...type })),
     hexTypeIds: [...options.hexTypeIds],
     psionicsEnabled: options.psionicsEnabled,
-    autoRollBalkanization: options.autoRollBalkanization
+    autoRollBalkanization: options.autoRollBalkanization,
+    generateAllEcosystems: options.generateAllEcosystems
   };
 }
 
@@ -260,7 +263,8 @@ export function normalizeGenerationOptions(raw: Partial<GenerationOptions> | nul
     cellTypes,
     hexTypeIds,
     psionicsEnabled: raw.psionicsEnabled !== false,
-    autoRollBalkanization: raw.autoRollBalkanization === true
+    autoRollBalkanization: raw.autoRollBalkanization === true,
+    generateAllEcosystems: raw.generateAllEcosystems === true
   };
 }
 

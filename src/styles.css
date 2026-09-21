@@ -143,3 +143,17 @@ p {
     font-size: 0.9rem;
   }
 }
+
+@media print {
+  .subsector-header,
+  .hex-map,
+  .world-detail-column,
+  .btn-market,
+  app-planet-market-panel,
+  app-settings-menu {
+    display: none !important;
+  }
+  app-world-encounter-panel {
+    display: block !important;
+  }
+}

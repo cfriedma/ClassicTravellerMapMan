@@ -1,3 +1,11 @@
+export interface DiceSource {
+    d6(): number;
+}
+
+export const defaultDice: DiceSource = {
+    d6: () => DiceUtils.rolld6()
+};
+
 export class DiceUtils {
     constructor() {
     }

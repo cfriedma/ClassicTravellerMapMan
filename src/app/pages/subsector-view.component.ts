@@ -6,6 +6,7 @@ import { SubsectorManagerService, SubsectorData } from '../services/subsector-ma
 import { SectorHex } from '../models/sectorhex';
 import { World, StarportType } from '../models/world';
 import { PlanetMarketPanelComponent } from '../features/equipment/planet-market-panel.component';
+import { WorldEncounterPanelComponent } from '../features/encounters/world-encounter-panel.component';
 import { SettingsMenuComponent } from '../shared/settings-menu.component';
 import { SettingsService } from '../services/settings.service';
 import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAtPosition, hexRow } from '../shared/hex-grid';
@@ -13,7 +14,7 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
 @Component({
   selector: 'app-subsector-view',
   standalone: true,
-  imports: [CommonModule, PlanetMarketPanelComponent, SettingsMenuComponent],
+  imports: [CommonModule, PlanetMarketPanelComponent, SettingsMenuComponent, WorldEncounterPanelComponent],
   template: `
     <div class="subsector-container" *ngIf="subsectorData; else notFound">
       <!-- Header -->
@@ -38,7 +39,15 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
       </header>
 
       <!-- Hex Map -->
-      <div class="hex-map-container">
+      <div class="hex-map-container" [class.with-encounters]="!!encounterWorld">
+        <app-world-encounter-panel
+          *ngIf="encounterWorld as world"
+          class="encounter-column"
+          [world]="world"
+          [hexLabel]="getHexCoordinates(selectedHexIndex)"
+          (closed)="closeEncounters()"
+        ></app-world-encounter-panel>
+
         <div class="hex-map" #hexMap (wheel)="onMapWheel($event)">
           <canvas 
             #hexCanvas
@@ -142,7 +151,15 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
               </div>
             </div>
           </div>
-          <button type="button" class="btn-market" (click)="openMarket()">Equipment &amp; Market</button>
+          <div class="world-actions">
+            <button type="button" class="btn-market" (click)="openMarket()">Equipment &amp; Market</button>
+            <button
+              type="button"
+              class="btn-market"
+              *ngIf="selectedHex.world.isHabitableForAnimals()"
+              (click)="openEncounters()"
+            >Encounter Tables</button>
+          </div>
         </div>
       </div>
 
@@ -247,6 +264,19 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
       display: flex;
       gap: 2rem;
       align-items: flex-start;
+    }
+
+    .hex-map-container.with-encounters {
+      max-width: 2000px;
+    }
+
+    .encounter-column {
+      width: min(760px, 48vw);
+      min-width: 560px;
+      flex-shrink: 0;
+      max-height: calc(100vh - 12rem);
+      overflow: auto;
+      overscroll-behavior: contain;
     }
 
     .hex-map {
@@ -416,6 +446,12 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
       box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
     }
 
+    .world-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
     .starport-A { color: #28a745; font-weight: bold; }
     .starport-B { color: #17a2b8; font-weight: bold; }
     .starport-C { color: #ffc107; font-weight: bold; }
@@ -481,9 +517,11 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
       }
 
       .world-detail-column,
-      .world-detail-panel {
+      .world-detail-panel,
+      .encounter-column {
         width: 100%;
         min-width: 0;
+        max-height: none;
       }
 
       .hex-grid {
@@ -506,6 +544,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
   selectedHexIndex = -1;
   selectedHex: SectorHex | null = null;
   marketOpen = false;
+  encountersOpen = false;
   psionicsEnabled = true;
   autoRollBalkanization = false;
   private mapScale = 1;
@@ -621,6 +660,9 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     this.selectedHex = this.subsectorData?.subsector.sectorHexes[index] || null;
     if (!this.selectedHex?.world) {
       this.marketOpen = false;
+      this.encountersOpen = false;
+    } else if (!this.selectedHex.world.isHabitableForAnimals()) {
+      this.encountersOpen = false;
     }
     this.drawSubsector(); // Redraw to show selection
   }
@@ -629,6 +671,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     this.selectedHexIndex = -1;
     this.selectedHex = null;
     this.marketOpen = false;
+    this.encountersOpen = false;
     this.drawSubsector(); // Redraw to clear selection
   }
 
@@ -642,8 +685,25 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     this.marketOpen = false;
   }
 
+  openEncounters(): void {
+    if (this.selectedHex?.world?.isHabitableForAnimals()) {
+      this.encountersOpen = true;
+    }
+  }
+
+  closeEncounters(): void {
+    this.encountersOpen = false;
+  }
+
   get marketWorld(): World | null {
     if (!this.marketOpen || !this.selectedHex?.world) {
+      return null;
+    }
+    return this.selectedHex.world;
+  }
+
+  get encounterWorld(): World | null {
+    if (!this.encountersOpen || !this.selectedHex?.world?.isHabitableForAnimals()) {
       return null;
     }
     return this.selectedHex.world;
