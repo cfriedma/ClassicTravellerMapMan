@@ -249,7 +249,11 @@ function collectEvents(world: World, catalog: AnimalEncounterCatalog, psionicsEn
   return events;
 }
 
-function summarize(world: World, terrains: TerrainDefinition[]): string {
-  const names = terrains.map(terrain => terrain.name.toLowerCase()).join(', ');
+export function describeStoredEcosystem(world: World, terrainNames: string[]): string {
+  const names = terrainNames.map(name => name.toLowerCase()).join(', ');
   return `${world.planetAtmosphere.label.toLowerCase()} air, ${world.planetHydrographics.label.toLowerCase()} hydro → ${names}`;
+}
+
+function summarize(world: World, terrains: TerrainDefinition[]): string {
+  return describeStoredEcosystem(world, terrains.map(terrain => terrain.name));
 }

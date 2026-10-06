@@ -4,6 +4,7 @@ export interface TradePriceResult {
     roll: number;
     dm: number;
     percent: number;
+    baseRoll?: number;
 }
 
 export interface DrugMarketState {

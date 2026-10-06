@@ -202,6 +202,8 @@ function fillEventRows(
     if (event.linkCarnivore && carnivore) {
       text = `Out of sight, animals (die roll ${carnivore.die}) are heard howling continuously.`;
     }
+    row.eventId = event.id;
+    row.eventSource = event.source === 'book' ? 'book' : 'custom';
     row.eventName = event.name;
     row.eventText = `Event — ${event.name}. ${text}`;
     row.eventMechanics = event.mechanics;

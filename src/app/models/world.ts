@@ -29,6 +29,8 @@ export class World {
     balkanStates?: BalkanState[];
     market?: PlanetMarketState;
     encounters?: WorldEncounterState;
+    localName?: string;
+    description?: string;
 
     spaceLanes: SectorHex[];
 
@@ -156,6 +158,12 @@ export class World {
         }
         if (Array.isArray(data.balkanStates)) {
             world.balkanStates = data.balkanStates as BalkanState[];
+        }
+        if (typeof data.localName === 'string') {
+            world.localName = data.localName;
+        }
+        if (typeof data.description === 'string') {
+            world.description = data.description;
         }
         return world;
     }

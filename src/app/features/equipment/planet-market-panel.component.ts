@@ -228,6 +228,7 @@ export class PlanetMarketPanelComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) world!: World;
   @Input() hexLabel = '';
   @Input() psionicsEnabled = true;
+  @Input() revision = 0;
   @Output() closed = new EventEmitter<void>();
 
   activeTab: MarketTabId = 'trade_goods';
@@ -276,7 +277,7 @@ export class PlanetMarketPanelComponent implements OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if ((changes['world'] || changes['psionicsEnabled']) && this.world) {
+    if ((changes['world'] || changes['psionicsEnabled'] || changes['revision']) && this.world) {
       this.refresh();
     }
   }

@@ -84,6 +84,18 @@ export class PlanetMarketService {
     this.persist();
   }
 
+  async recomputeTradeModifiers(world: World): Promise<void> {
+    if (!world.market) {
+      return;
+    }
+    await this.catalog.ensureLoaded();
+    this.recomputeResults(world, world.market.tradeResults, 'purchase');
+    if (world.market.resaleResults) {
+      this.recomputeResults(world, world.market.resaleResults, 'resale');
+    }
+    this.persist();
+  }
+
   getPurchaseDm(world: World, good: TradeGood): number {
     return this.getDm(world, good, 'purchase');
   }
@@ -222,12 +234,35 @@ export class PlanetMarketService {
   private rollTradeResult(world: World, good: TradeGood, kind: TradeDmKind): TradePriceResult {
     const dm = this.getDm(world, good, kind);
     const raw = DiceUtils.standardRoll(dm);
+    const baseRoll = raw - dm;
     const roll = Math.min(15, Math.max(2, raw));
     return {
       roll,
       dm,
+      baseRoll,
       percent: this.catalog.getActualValuePercent(roll)
     };
+  }
+
+  private recomputeResults(
+    world: World,
+    results: Record<string, TradePriceResult>,
+    kind: TradeDmKind
+  ): void {
+    for (const good of this.catalog.getGoods()) {
+      const result = results[good.die];
+      if (!result) {
+        continue;
+      }
+      const dm = this.getDm(world, good, kind);
+      const baseRoll = result.baseRoll ?? result.roll - result.dm;
+      const raw = baseRoll + dm;
+      const roll = Math.min(15, Math.max(2, raw));
+      result.baseRoll = baseRoll;
+      result.dm = dm;
+      result.roll = roll;
+      result.percent = this.catalog.getActualValuePercent(roll);
+    }
   }
 
   private rollAllDrugs(

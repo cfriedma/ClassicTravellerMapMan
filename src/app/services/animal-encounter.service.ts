@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { World } from '../models/world';
-import { WorldEncounterState } from '../models/animal-encounter';
+import { AnimalEncounterRow, WorldEncounterState } from '../models/animal-encounter';
 import { AnimalEncounterCatalogService } from './animal-encounter-catalog.service';
 import { SubsectorManagerService } from './subsector-manager.service';
 import { generatePsionicAssaulters, generateWorldEncounters } from '../features/encounters/animal-encounter-generator';
@@ -32,6 +32,23 @@ export class AnimalEncounterService {
       this.persist();
     }
     return world.encounters;
+  }
+
+  saveEdits(): void {
+    this.persist();
+  }
+
+  isCustomEvent(row: AnimalEncounterRow): boolean {
+    if (row.kind !== 'event') {
+      return false;
+    }
+    if (row.eventSource === 'custom') {
+      return true;
+    }
+    if (row.eventSource === 'book') {
+      return false;
+    }
+    return this.catalog.getCatalog().customEvents.some(event => event.name === row.eventName);
   }
 
   async rerollEncounters(world: World): Promise<WorldEncounterState | null> {

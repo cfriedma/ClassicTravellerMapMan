@@ -131,6 +131,10 @@ export interface AnimalEncounterRow {
   weapons?: string;
   characteristics?: string;
   specialNotes?: string;
+  localName?: string;
+  description?: string;
+  eventId?: string;
+  eventSource?: 'book' | 'custom';
   eventName?: string;
   eventText?: string;
   eventMechanics?: string;
