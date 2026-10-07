@@ -74,6 +74,8 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
           (closed)="closeEncounters()"
         ></app-world-encounter-panel>
 
+        <div class="map-column">
+        <div class="map-and-detail">
         <div class="hex-map" #hexMap (wheel)="onMapWheel($event)">
           <canvas 
             #hexCanvas
@@ -392,16 +394,18 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
             </div>
           </div>
         </div>
-      </div>
+        </div>
 
-      <app-planet-market-panel
-        *ngIf="marketWorld as world"
-        [world]="world"
-        [hexLabel]="getHexCoordinates(selectedHexIndex)"
-        [psionicsEnabled]="psionicsEnabled"
-        [revision]="editRevision"
-        (closed)="closeMarket()"
-      ></app-planet-market-panel>
+        <app-planet-market-panel
+          *ngIf="marketWorld as world"
+          [world]="world"
+          [hexLabel]="getHexCoordinates(selectedHexIndex)"
+          [psionicsEnabled]="psionicsEnabled"
+          [revision]="editRevision"
+          (closed)="closeMarket()"
+        ></app-planet-market-panel>
+        </div>
+      </div>
     </div>
 
     <ng-template #notFound>
@@ -532,6 +536,20 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
       max-width: none;
     }
 
+    .map-column {
+      flex: 1;
+      min-width: min-content;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .map-and-detail {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
     .encounter-column {
       width: min(1240px, calc(100vw - 28rem));
       min-width: 980px;
@@ -546,7 +564,7 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
 
     .hex-map {
       flex: 1;
-      min-width: 0;
+      min-width: 24rem;
       background: var(--bg-card);
       border-radius: 12px;
       padding: 2rem;
@@ -822,8 +840,15 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
         gap: 1rem;
       }
 
-      .hex-map-container {
+      .hex-map-container,
+      .map-and-detail {
         flex-direction: column;
+      }
+
+      .map-column,
+      .hex-map {
+        width: 100%;
+        min-width: 0;
       }
 
       .world-detail-column,

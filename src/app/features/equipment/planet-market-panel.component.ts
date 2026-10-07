@@ -142,10 +142,9 @@ type MarketTabId = 'trade_goods' | string;
     </section>
   `,
   styles: [`
-    :host { display: block; padding: 0 1rem; }
+    :host { display: block; }
     .market-panel {
-      margin: 0 auto 2rem;
-      max-width: 1400px;
+      margin: 0 0 2rem;
       background: var(--bg-card);
       color: var(--text-primary);
       border-radius: 12px;
