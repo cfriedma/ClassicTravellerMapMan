@@ -3,7 +3,6 @@ import { BehaviorSubject } from 'rxjs';
 import {
   AppSettings,
   DEFAULT_SETTINGS,
-  ThemeName,
   normalizeAppSettings
 } from '../models/settings';
 import { cloneGenerationOptions } from '../models/generation-options';
@@ -20,7 +19,7 @@ export class SettingsService {
   readonly settings$ = this.settingsSubject.asObservable();
 
   constructor(@Inject(KEY_VALUE_STORE) private store: KeyValueStore) {
-    this.applyTheme(this.snapshot.theme);
+    this.applyAppearance(this.snapshot);
   }
 
   get snapshot(): AppSettings {
@@ -31,23 +30,23 @@ export class SettingsService {
     try {
       const raw = await this.store.getItem(this.STORAGE_KEY);
       if (!raw) {
-        this.applyTheme(this.snapshot.theme);
+        this.applyAppearance(this.snapshot);
         return;
       }
       const next = this.normalize({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
+      this.applyAppearance(next);
       this.settingsSubject.next(next);
-      this.applyTheme(next.theme);
     } catch (error) {
       console.error('Failed to load settings from storage:', error);
-      this.applyTheme(this.snapshot.theme);
+      this.applyAppearance(this.snapshot);
     }
   }
 
   patch(partial: Partial<AppSettings>): void {
     const next = this.normalize({ ...this.snapshot, ...partial });
+    this.applyAppearance(next);
     this.settingsSubject.next(next);
     this.save(next);
-    this.applyTheme(next.theme);
   }
 
   private save(settings: AppSettings): void {
@@ -64,7 +63,8 @@ export class SettingsService {
     };
   }
 
-  private applyTheme(theme: ThemeName): void {
-    document.documentElement.setAttribute('data-theme', theme);
+  private applyAppearance(settings: AppSettings): void {
+    document.documentElement.setAttribute('data-theme', settings.theme);
+    document.documentElement.setAttribute('data-color', settings.colorCoding ? 'on' : 'off');
   }
 }

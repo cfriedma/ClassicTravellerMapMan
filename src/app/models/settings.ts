@@ -11,6 +11,7 @@ export interface AppSettings {
   priceSource: PriceSource;
   mapScale: number;
   theme: ThemeName;
+  colorCoding: boolean;
   lastGenerationOptions: GenerationOptions;
 }
 
@@ -18,6 +19,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   priceSource: 'purchase',
   mapScale: 1,
   theme: 'light',
+  colorCoding: false,
   lastGenerationOptions: createDefaultGenerationOptions()
 };
 
@@ -30,6 +32,7 @@ export function normalizeAppSettings(settings: Partial<AppSettings> & Record<str
     ? settings.priceSource as PriceSource
     : DEFAULT_SETTINGS.priceSource;
   const theme: ThemeName = settings.theme === 'dark' ? 'dark' : 'light';
+  const colorCoding = settings.colorCoding === true;
   const mapScale = Math.min(
     MAP_SCALE_MAX,
     Math.max(MAP_SCALE_MIN, Number(settings.mapScale) || DEFAULT_SETTINGS.mapScale)
@@ -46,6 +49,7 @@ export function normalizeAppSettings(settings: Partial<AppSettings> & Record<str
     priceSource,
     mapScale,
     theme,
+    colorCoding,
     lastGenerationOptions: normalizeGenerationOptions(rawGeneration)
   };
 }

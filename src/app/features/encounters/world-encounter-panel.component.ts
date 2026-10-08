@@ -23,8 +23,8 @@ import { AnimalEncounterService } from '../../services/animal-encounter.service'
           <p class="meta">{{ encounters.ecosystemSummary }}</p>
         </div>
         <div class="actions">
-          <button type="button" class="btn" (click)="reroll()">Reroll tables</button>
-          <button type="button" class="btn" (click)="print()">Print</button>
+          <button type="button" class="btn btn-line" (click)="reroll()">Reroll tables</button>
+          <button type="button" class="btn btn-line" (click)="print()">Print</button>
           <button type="button" class="btn" (click)="closed.emit()">Close</button>
         </div>
       </div>
@@ -273,69 +273,93 @@ import { AnimalEncounterService } from '../../services/animal-encounter.service'
   styles: [`
     :host { display: flex; flex-direction: column; height: 100%; min-height: 0; }
     .encounter-panel {
-      margin: 0; max-width: none; background: var(--bg-card);
-      color: var(--text-primary); border-radius: 12px; box-shadow: 0 4px 20px var(--shadow);
+      margin: 0; max-width: none; background: var(--paper);
+      color: var(--ink); border: 1px solid var(--ink); border-radius: 0; box-shadow: none;
       display: flex; flex-direction: column; min-height: 0; flex: 1; overflow: hidden;
     }
     .encounter-header {
-      display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; flex-shrink: 0;
-      padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff;
+      display: flex; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; flex-shrink: 0;
+      padding: 0.55rem 0.7rem; background: var(--paper); color: var(--ink);
+      border-bottom: 1px solid var(--ink);
     }
-    h3 { margin: 0 0 0.35rem; font-size: 1.2rem; }
-    .meta { margin: 0 0 0.75rem; opacity: 0.95; font-size: 0.9rem; color: inherit; }
-    .tab-body .meta { color: var(--text-secondary); opacity: 1; }
-    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-    .btn {
-      background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.35);
-      padding: 0.45rem 0.85rem; border-radius: 6px; cursor: pointer; font-weight: 600;
+    h3 {
+      margin: 0 0 0.2rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
-    .btn:hover { background: rgba(255,255,255,0.3); }
+    .meta { margin: 0 0 0.55rem; font-size: 0.8rem; color: var(--ink-soft); }
+    .encounter-header .meta { color: var(--ink-soft); }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
     .group-bar, .tab-bar {
-      display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.65rem 1rem 0; flex-shrink: 0;
-      background: var(--bg-muted); border-bottom: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; gap: 0; padding: 0 0.45rem; flex-shrink: 0;
+      background: var(--paper); border-bottom: 1px solid var(--rule);
     }
     .tab {
-      border: none; background: transparent; padding: 0.55rem 0.75rem; cursor: pointer;
-      border-bottom: 3px solid transparent; font-weight: 600; color: var(--text-secondary);
+      border: 1px solid transparent;
+      border-bottom: none;
+      background: transparent;
+      margin-bottom: -1px;
+      padding: 0.35rem 0.55rem;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
     }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .tab-body { padding: 0.75rem 0.85rem 1rem; overflow: auto; min-height: 0; flex: 1; }
-    table { width: 100%; min-width: 1080px; border-collapse: separate; border-spacing: 0; font-size: 0.8rem; }
-    th, td { text-align: left; padding: 0.4rem 0.45rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .tab.active {
+      color: var(--ink);
+      border-color: var(--rule);
+      background: var(--paper);
+    }
+    .tab-body { padding: 0.55rem 0.65rem 0.75rem; overflow: auto; min-height: 0; flex: 1; }
+    table { width: 100%; min-width: 1080px; border-collapse: collapse; font-size: 0.78rem; }
+    th, td { text-align: left; padding: 0.28rem 0.35rem; border: 1px solid var(--rule-soft); vertical-align: top; }
     th {
       position: sticky; top: 0; z-index: 2;
-      background: var(--bg-muted);
-      box-shadow: inset 0 -1px 0 var(--border);
+      background: var(--muted);
+      font-size: 0.66rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
     th:nth-child(3), td:nth-child(3) { min-width: 14rem; }
     th:nth-child(9), td:nth-child(9) { min-width: 12rem; }
-    .note { color: var(--text-secondary); font-size: 0.78rem; margin-top: 0.15rem; }
+    .note { color: var(--ink-soft); font-size: 0.75rem; margin-top: 0.15rem; }
     .cell-input, .cell-area {
       width: 100%;
       min-width: 4.5rem;
       box-sizing: border-box;
       font: inherit;
-      font-size: 0.78rem;
-      padding: 0.15rem 0.25rem;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: var(--bg-card);
-      color: var(--text-primary);
+      font-size: 0.75rem;
+      padding: 0.12rem 0.2rem;
+      border: 1px solid var(--rule);
+      border-radius: 0;
+      background: var(--paper);
+      color: var(--ink);
     }
     .cell-area { min-width: 8rem; display: block; }
     .field-label {
       display: block;
-      margin-top: 0.35rem;
-      font-size: 0.7rem;
-      color: var(--text-secondary);
+      margin-top: 0.3rem;
+      font-size: 0.66rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
     }
-    .event-row td { background: var(--bg-muted); }
-    .stat-line { margin-top: 0.4rem; font-family: 'Courier New', monospace; font-size: 0.8rem; }
-    .psi-block { margin: 1rem 0 0; padding: 0.75rem 0 0; border-top: 1px solid var(--border); }
-    .psi-block h4 { margin: 0 0 0.35rem; font-size: 0.95rem; }
-    .legend { margin: 0.85rem 0 0; color: var(--text-secondary); font-size: 0.8rem; }
-    details { margin-top: 0.35rem; }
-    details p { margin: 0.35rem 0 0; color: var(--text-secondary); }
+    .event-row td { background: var(--muted); }
+    .stat-line { margin-top: 0.35rem; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.75rem; }
+    .psi-block { margin: 0.75rem 0 0; padding: 0.55rem 0 0; border-top: 1px solid var(--rule); }
+    .psi-block h4 {
+      margin: 0 0 0.3rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .legend { margin: 0.7rem 0 0; color: var(--ink-soft); font-size: 0.75rem; }
+    details { margin-top: 0.3rem; }
+    details p { margin: 0.3rem 0 0; color: var(--ink-soft); }
     @media (max-width: 768px) {
       :host, .encounter-panel { height: auto; overflow: visible; display: block; }
       .encounter-header { flex-direction: column; }
@@ -343,7 +367,7 @@ import { AnimalEncounterService } from '../../services/animal-encounter.service'
     }
     @media print {
       .actions { display: none; }
-      .encounter-panel { box-shadow: none; }
+      .encounter-panel { box-shadow: none; border-color: #111; }
     }
   `]
 })

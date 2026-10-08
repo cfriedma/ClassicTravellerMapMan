@@ -17,7 +17,7 @@ import { SettingsService } from './services/settings.service';
   `]
 })
 export class AppComponent {
-  title = 'Classic Traveller Map Man';
+  title = 'Classic Traveller Map Manager';
 
   constructor(private settings: SettingsService) {}
 }

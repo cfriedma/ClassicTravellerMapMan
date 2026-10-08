@@ -57,7 +57,7 @@ import { MAP_SCALE_MAX, MAP_SCALE_MIN, MAP_SCALE_STEP, PriceSource, ThemeName } 
         </label>
 
         <fieldset>
-          <legend>Appearance</legend>
+          <legend>Sheet</legend>
           <label class="radio-row" *ngFor="let option of themeOptions">
             <input
               type="radio"
@@ -69,6 +69,18 @@ import { MAP_SCALE_MAX, MAP_SCALE_MIN, MAP_SCALE_STEP, PriceSource, ThemeName } 
             {{ option.label }}
           </label>
         </fieldset>
+
+        <label class="check-row">
+          <input
+            type="checkbox"
+            [ngModel]="settings.colorCoding"
+            (ngModelChange)="setColorCoding($event)"
+          >
+          <span>
+            <strong>Color code distinctions</strong>
+            <small>Tint starports, bases, lanes, and status where the color names a type.</small>
+          </span>
+        </label>
       </div>
     </div>
   `,
@@ -79,12 +91,12 @@ import { MAP_SCALE_MAX, MAP_SCALE_MIN, MAP_SCALE_STEP, PriceSource, ThemeName } 
     }
 
     .settings-toggle {
-      width: 2.6rem;
-      height: 2.6rem;
-      border-radius: 8px;
-      border: 2px solid rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.18);
-      color: white;
+      width: 2.1rem;
+      height: 2.1rem;
+      border-radius: 0;
+      border: 1px solid currentColor;
+      background: transparent;
+      color: inherit;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -94,7 +106,8 @@ import { MAP_SCALE_MAX, MAP_SCALE_MIN, MAP_SCALE_STEP, PriceSource, ThemeName } 
 
     .settings-toggle:hover,
     .settings-toggle.open {
-      background: rgba(255, 255, 255, 0.3);
+      background: var(--control, currentColor);
+      color: var(--control-inverse, var(--paper));
     }
 
     .settings-toggle svg {
@@ -105,22 +118,24 @@ import { MAP_SCALE_MAX, MAP_SCALE_MIN, MAP_SCALE_STEP, PriceSource, ThemeName } 
 
     .settings-panel {
       position: absolute;
-      top: calc(100% + 0.5rem);
+      top: calc(100% + 0.35rem);
       right: 0;
-      width: 20rem;
+      width: 18rem;
       max-width: calc(100vw - 2rem);
-      background: var(--bg-card, #fff);
-      color: var(--text-primary, #333);
-      border: 1px solid var(--border, #e1e5e9);
-      border-radius: 12px;
-      box-shadow: 0 12px 32px var(--shadow, rgba(0, 0, 0, 0.18));
-      padding: 1rem 1.1rem 1.15rem;
+      background: var(--paper, #fff);
+      color: var(--ink, #111);
+      border: 1px solid var(--rule, #111);
+      border-radius: 0;
+      box-shadow: none;
+      padding: 0.75rem 0.8rem 0.85rem;
       text-align: left;
     }
 
     h2 {
-      margin: 0 0 0.85rem;
-      font-size: 1.05rem;
+      margin: 0 0 0.7rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
 
     fieldset {
@@ -131,15 +146,19 @@ import { MAP_SCALE_MAX, MAP_SCALE_MIN, MAP_SCALE_STEP, PriceSource, ThemeName } 
 
     legend,
     .toggle-row strong,
-    .scale-row strong {
+    .scale-row strong,
+    .check-row strong {
       display: block;
-      font-size: 0.85rem;
-      font-weight: 700;
-      margin-bottom: 0.35rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
     }
 
     .toggle-row,
     .radio-row,
+    .check-row,
     .scale-row {
       display: flex;
       gap: 0.65rem;
@@ -150,11 +169,14 @@ import { MAP_SCALE_MAX, MAP_SCALE_MIN, MAP_SCALE_STEP, PriceSource, ThemeName } 
     }
 
     .toggle-row small,
+    .check-row small,
     .scale-row small {
       display: block;
-      color: var(--text-secondary, #666);
+      color: var(--ink-soft, #444);
       font-weight: 400;
       font-size: 0.75rem;
+      letter-spacing: 0;
+      text-transform: none;
       line-height: 1.35;
     }
 
@@ -218,6 +240,10 @@ export class SettingsMenuComponent {
 
   setTheme(value: ThemeName): void {
     this.settingsService.patch({ theme: value });
+  }
+
+  setColorCoding(value: boolean): void {
+    this.settingsService.patch({ colorCoding: value });
   }
 
   @HostListener('document:click', ['$event'])

@@ -17,147 +17,117 @@ import {
   imports: [CommonModule, FormsModule, SettingsMenuComponent, GenerationSetupComponent],
   template: `
     <div class="home-container">
-      <header class="hero-section">
-        <div class="hero-toolbar">
+      <header class="cover">
+        <div class="cover-toolbar">
           <app-settings-menu></app-settings-menu>
         </div>
-        <h1 class="hero-title">Classic Traveller Map Generator</h1>
-        <p class="hero-subtitle">Create and explore randomly generated subsectors in the Traveller universe</p>
+        <svg class="cover-mark" viewBox="0 0 68 66" aria-hidden="true">
+          <polygon points="34.4,30 24,36 13.6,30 13.6,18 24,12 34.4,18" />
+          <polygon points="55.2,30 44.8,36 34.4,30 34.4,18 44.8,12 55.2,18" />
+          <polygon points="44.8,48 34.4,54 24,48 24,36 34.4,30 44.8,36" />
+        </svg>
+        <h1>Classic Traveller Map Manager</h1>
       </header>
 
-      <div class="main-content">
-        <!-- Create New Subsector Section -->
-        <div class="card create-section">
-          <div class="card-header">
-            <h2>Create New Subsector</h2>
-            <p>Generate a new subsector with randomly placed worlds, starports, and space lanes</p>
-          </div>
-          
-          <div class="card-body">
+      <main class="sheet">
+        <section class="form-section">
+          <h2><span class="sec-no">1</span> Generate a subsector</h2>
+          <div class="form-body">
+            <p class="lede">File a new subsector. Worlds, starports, and lanes are rolled from the rules you set.</p>
             <div class="input-group">
-              <label for="subsectorName">Subsector Name (optional)</label>
-              <input 
-                type="text" 
+              <label for="subsectorName">Subsector name (optional)</label>
+              <input
+                type="text"
                 id="subsectorName"
-                [(ngModel)]="newSubsectorName" 
-                placeholder="Enter a name for your subsector..."
+                [(ngModel)]="newSubsectorName"
+                placeholder="Designation"
                 maxlength="50"
                 (keyup.enter)="openGenerationSetup()"
               >
             </div>
-            
-            <button 
-              class="btn btn-primary btn-large"
-              (click)="openGenerationSetup()"
-            >
-              🚀 Generate New Subsector
-            </button>
+            <button class="btn" type="button" (click)="openGenerationSetup()">Generate</button>
           </div>
-        </div>
+        </section>
 
-        <!-- Access Existing Subsector Section -->
-        <div class="card access-section">
-          <div class="card-header">
-            <h2>Access Existing Subsector</h2>
-            <p>Enter a subsector code to view a previously generated subsector</p>
-          </div>
-          
-          <div class="card-body">
+        <section class="form-section">
+          <h2><span class="sec-no">2</span> Recall by code</h2>
+          <div class="form-body">
+            <p class="lede">Enter the 8-character code of a subsector already on file.</p>
             <div class="input-group">
-              <label for="subsectorCode">Subsector Code</label>
-              <input 
-                type="text" 
+              <label for="subsectorCode">Subsector code</label>
+              <input
+                type="text"
                 id="subsectorCode"
-                [(ngModel)]="accessCode" 
-                placeholder="Enter 8-character code (e.g., ABC123XY)"
+                [(ngModel)]="accessCode"
+                placeholder="ABC123XY"
                 maxlength="8"
                 (input)="onCodeInput($event)"
                 class="code-input"
               >
             </div>
-            
-            <button 
-              class="btn btn-secondary btn-large"
+            <button
+              class="btn btn-line"
+              type="button"
               (click)="accessSubsector()"
               [disabled]="!isValidCode(accessCode) || isAccessing"
             >
-              <span *ngIf="!isAccessing">🗺️ Access Subsector</span>
-              <span *ngIf="isAccessing">🔍 Loading...</span>
+              <span *ngIf="!isAccessing">Open record</span>
+              <span *ngIf="isAccessing">Opening</span>
             </button>
-            
-            <div *ngIf="accessError" class="error-message">
-              {{ accessError }}
-            </div>
+            <p *ngIf="accessError" class="note">{{ accessError }}</p>
           </div>
-        </div>
+        </section>
 
-        <!-- Recent Subsectors Section -->
-        <div class="card recent-section" *ngIf="recentSubsectors.length > 0">
-          <div class="card-header">
-            <h2>Recent Subsectors</h2>
-            <p>Your recently accessed subsectors</p>
+        <section class="form-section" *ngIf="recentSubsectors.length > 0">
+          <h2><span class="sec-no">3</span> Recent records</h2>
+          <div class="form-body">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Code</th>
+                  <th>Last access</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let subsector of recentSubsectors">
+                  <td>
+                    <button type="button" class="linkish" (click)="accessSubsectorById(subsector.id)">
+                      {{ subsector.name }}
+                    </button>
+                  </td>
+                  <td class="mono">{{ subsector.id }}</td>
+                  <td>{{ subsector.lastAccessed | date:'medium' }}</td>
+                  <td class="row-actions">
+                    <button
+                      type="button"
+                      class="btn btn-line btn-small"
+                      (click)="copyToClipboard(subsector.id)"
+                    >Copy code</button>
+                    <button
+                      type="button"
+                      class="btn btn-line btn-small"
+                      (click)="deleteSubsector(subsector.id)"
+                    >Delete</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          
-          <div class="card-body">
-            <div class="recent-list">
-              <div 
-                *ngFor="let subsector of recentSubsectors" 
-                class="recent-item"
-                (click)="accessSubsectorById(subsector.id)"
-              >
-                <div class="recent-info">
-                  <h3>{{ subsector.name }}</h3>
-                  <p class="recent-code">Code: {{ subsector.id }}</p>
-                  <p class="recent-date">Last accessed: {{ subsector.lastAccessed | date:'short' }}</p>
-                </div>
-                <div class="recent-actions">
-                  <button 
-                    class="btn btn-small btn-outline"
-                    (click)="copyToClipboard(subsector.id); $event.stopPropagation()"
-                  >
-                    📋 Copy Code
-                  </button>
-                  <button 
-                    class="btn btn-small btn-danger"
-                    (click)="deleteSubsector(subsector.id); $event.stopPropagation()"
-                  >
-                    🗑️ Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </section>
 
-        <!-- How It Works Section -->
-        <div class="card info-section">
-          <div class="card-header">
-            <h2>How It Works</h2>
+        <section class="form-section">
+          <h2><span class="sec-no">4</span> Procedure</h2>
+          <div class="form-body">
+            <ol class="procedure">
+              <li><strong>Generate.</strong> Open section 1. Set the grid, cell types, and campaign rules, then file the hex plate.</li>
+              <li><strong>Share.</strong> Each subsector receives an 8-character code. Pass the code, or the address, to return to the same record.</li>
+              <li><strong>Inspect.</strong> Read the world statistics, trade classes, and lanes on the plate. Markets and encounter tables open from the world entry.</li>
+            </ol>
           </div>
-          
-          <div class="card-body">
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-icon">🎲</div>
-                <h3>Generate</h3>
-                <p>Click "Generate New Subsector" to choose shape, world density, and campaign rules, then create a hex map following Classic Traveller.</p>
-              </div>
-              
-              <div class="info-item">
-                <div class="info-icon">🔗</div>
-                <h3>Share</h3>
-                <p>Each subsector gets a unique 8-character code. Share this code with others or bookmark the URL to return later.</p>
-              </div>
-              
-              <div class="info-item">
-                <div class="info-icon">🗺️</div>
-                <h3>Explore</h3>
-                <p>View detailed world statistics, trade classifications, and space lane connections in an interactive hex map.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
 
     <app-generation-setup
@@ -171,284 +141,149 @@ import {
   styles: [`
     .home-container {
       min-height: 100vh;
-      background: var(--home-gradient);
-      padding: 2rem 1rem;
+      background: var(--paper);
     }
 
-    .hero-section {
+    .cover {
       position: relative;
-      text-align: center;
-      color: white;
-      margin-bottom: 3rem;
+      background: var(--cover);
+      color: var(--cover-ink);
+      --control: var(--cover-ink);
+      --control-inverse: var(--cover);
+      padding: 1.6rem 1.5rem 1.35rem;
     }
 
-    .hero-toolbar {
+    .cover-toolbar {
       position: absolute;
-      top: 0;
-      right: 0;
+      top: 0.85rem;
+      right: 0.85rem;
     }
 
-    .hero-title {
-      font-size: 3rem;
-      font-weight: bold;
-      margin-bottom: 1rem;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    .cover-mark {
+      width: 4.25rem;
+      height: auto;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.15;
     }
 
-    .hero-subtitle {
-      font-size: 1.2rem;
-      opacity: 0.9;
-      max-width: 600px;
+    .cover h1 {
+      margin: 0.85rem 0 0;
+      max-width: 22rem;
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      line-height: 1.15;
+    }
+
+    .sheet {
+      max-width: 46rem;
       margin: 0 auto;
+      padding: 1.1rem 1rem 2.5rem;
     }
 
-    .main-content {
-      max-width: 800px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
+    .form-section {
+      border: 1px solid var(--rule);
+      margin-bottom: 0.75rem;
+      background: var(--paper);
     }
 
-    .card {
-      background: var(--bg-card);
-      border-radius: 12px;
-      box-shadow: 0 8px 32px var(--shadow);
-      overflow: hidden;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-    }
-
-    .card-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 2rem;
-      text-align: center;
-    }
-
-    .card-header h2 {
-      margin: 0 0 0.5rem 0;
-      font-size: 1.5rem;
-    }
-
-    .card-header p {
+    .form-section h2 {
       margin: 0;
-      opacity: 0.9;
+      padding: 0.4rem 0.65rem;
+      border-bottom: 1px solid var(--rule);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
 
-    .card-body {
-      padding: 2rem;
+    .sec-no {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      margin-right: 0.5rem;
+    }
+
+    .form-body {
+      padding: 0.7rem 0.65rem 0.8rem;
+    }
+
+    .lede {
+      margin: 0 0 0.7rem;
+      color: var(--ink-soft);
+      font-size: 0.85rem;
     }
 
     .input-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.7rem;
     }
 
     .input-group label {
       display: block;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
+      font-size: 0.72rem;
       font-weight: 600;
-      color: var(--text-primary);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .input-group input {
       width: 100%;
-      padding: 1rem;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      font-size: 1rem;
-      background: var(--bg-card);
-      color: var(--text-primary);
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .input-group input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
     .code-input {
-      font-family: 'Courier New', monospace;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 0.14em;
     }
 
-    .btn {
-      padding: 1rem 2rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
+    .note {
+      margin: 0.7rem 0 0;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid var(--rule);
+      color: var(--ink);
+      font-size: 0.85rem;
+    }
+
+    .procedure {
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+
+    .procedure li {
+      margin: 0 0 0.4rem;
+    }
+
+    .procedure li:last-child {
+      margin-bottom: 0;
+    }
+
+    .linkish {
+      border: 0;
+      background: none;
+      padding: 0;
+      color: inherit;
+      font: inherit;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+      text-align: left;
     }
 
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    .linkish:hover {
+      text-decoration: underline;
     }
 
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-    }
-
-    .btn-secondary {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      color: white;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4);
-    }
-
-    .btn-outline {
-      background: transparent;
-      border: 2px solid #667eea;
-      color: #667eea;
-    }
-
-    .btn-outline:hover {
-      background: #667eea;
-      color: white;
-    }
-
-    .btn-danger {
-      background: #dc3545;
-      color: white;
-    }
-
-    .btn-danger:hover {
-      background: #c82333;
-    }
-
-    .btn-large {
-      width: 100%;
-      padding: 1.25rem 2rem;
-      font-size: 1.1rem;
-    }
-
-    .btn-small {
-      padding: 0.5rem 1rem;
-      font-size: 0.9rem;
-    }
-
-    .error-message {
-      background: #f8d7da;
-      color: #721c24;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-      border: 1px solid #f5c6cb;
-    }
-
-    .recent-list {
+    .row-actions {
       display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .recent-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem;
-      background: var(--bg-muted);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .recent-item:hover {
-      background: var(--bg-hover);
-    }
-
-    .recent-info h3 {
-      margin: 0 0 0.5rem 0;
-      color: var(--text-primary);
-    }
-
-    .recent-code {
-      font-family: 'Courier New', monospace;
-      color: #667eea;
-      font-weight: bold;
-      margin: 0.25rem 0;
-    }
-
-    .recent-date {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      margin: 0;
-    }
-
-    .recent-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 2rem;
-    }
-
-    .info-item {
-      text-align: center;
-    }
-
-    .info-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-
-    .info-item h3 {
-      margin: 0 0 1rem 0;
-      color: var(--text-primary);
-    }
-
-    .info-item p {
-      color: var(--text-secondary);
-      line-height: 1.6;
-      margin: 0;
+      flex-wrap: wrap;
+      gap: 0.35rem;
     }
 
     @media (max-width: 768px) {
-      .home-container {
-        padding: 1rem 0.5rem;
-      }
-
-      .hero-title {
-        font-size: 2rem;
-      }
-
-      .card-body {
-        padding: 1.5rem;
-      }
-
-      .recent-item {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-      }
-
-      .recent-actions {
-        justify-content: center;
+      .cover h1 {
+        font-size: 1.1rem;
+        padding-right: 2.5rem;
       }
     }
   `]

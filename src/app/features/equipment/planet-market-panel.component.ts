@@ -20,7 +20,7 @@ type MarketTabId = 'trade_goods' | string;
     <section class="market-panel" *ngIf="world && market">
       <div class="market-header">
         <div class="market-title">
-          <h3>{{ hexLabel }} Equipment &amp; Market</h3>
+          <h3>{{ hexLabel }} Equipment and market</h3>
           <p class="market-meta">
             TL {{ world.planetTechLevel }}
             · Law {{ world.planetLawLevel.key }}
@@ -29,9 +29,9 @@ type MarketTabId = 'trade_goods' | string;
           </p>
         </div>
         <div class="market-actions">
-          <button type="button" class="btn" (click)="rerollPrices()">Reroll Prices</button>
-          <button type="button" class="btn" (click)="rerollAvailability()">Reroll Drug Availability</button>
-          <button type="button" class="btn btn-close-panel" (click)="closed.emit()">Close</button>
+          <button type="button" class="btn btn-line" (click)="rerollPrices()">Reroll prices</button>
+          <button type="button" class="btn btn-line" (click)="rerollAvailability()">Reroll drug availability</button>
+          <button type="button" class="btn" (click)="closed.emit()">Close</button>
         </div>
       </div>
 
@@ -79,7 +79,8 @@ type MarketTabId = 'trade_goods' | string;
       </div>
 
       <div class="tab-body" *ngIf="activeTab !== 'trade_goods'">
-        <p class="psi-banner" *ngIf="psionicsEnabled && activeTab === 'drugs'">
+        <p class="note psi-note" *ngIf="psionicsEnabled && activeTab === 'drugs'">
+          <span class="note-label">Note</span>
           <ng-container *ngIf="world.isPsionicsPermitted(); else psiIllegal">
             Psionics are permitted on this world.
           </ng-container>
@@ -88,7 +89,8 @@ type MarketTabId = 'trade_goods' | string;
           </ng-template>
           Psi-drugs are {{ world.arePsiDrugsLegal() ? 'legal' : 'illegal' }}.
         </p>
-        <p class="law-banner" *ngIf="activeTab === 'weapons' || activeTab === 'ammunition'">
+        <p class="note law-note" *ngIf="activeTab === 'weapons' || activeTab === 'ammunition'">
+          <span class="note-label">Note</span>
           {{ world.planetLawLevel.label }}
           <span *ngIf="world.planetLawLevel.key > 0"> Prohibitions from lower law levels also apply.</span>
         </p>
@@ -119,7 +121,7 @@ type MarketTabId = 'trade_goods' | string;
               <td *ngIf="showStatusColumn">
                 <ng-container *ngIf="activeTab === 'drugs'">
                   <span class="badge" [class.ok]="drugState(item)?.available" [class.bad]="!drugState(item)?.available">
-                    {{ drugState(item)?.available ? 'Available' : 'Unavailable' }}
+                    {{ drugState(item)?.available ? 'Avail' : 'Unavail' }}
                   </span>
                 </ng-container>
                 <span
@@ -144,80 +146,110 @@ type MarketTabId = 'trade_goods' | string;
   styles: [`
     :host { display: block; }
     .market-panel {
-      margin: 0 0 2rem;
-      background: var(--bg-card);
-      color: var(--text-primary);
-      border-radius: 12px;
-      box-shadow: 0 4px 20px var(--shadow);
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      border: 1px solid var(--ink);
+      border-radius: 0;
+      box-shadow: none;
       overflow: hidden;
     }
     .market-header {
       display: flex;
       justify-content: space-between;
-      gap: 1rem;
+      gap: 0.75rem;
       flex-wrap: wrap;
-      padding: 1.25rem 1.5rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff;
+      padding: 0.55rem 0.7rem;
+      background: var(--paper);
+      color: var(--ink);
+      border-bottom: 1px solid var(--ink);
     }
-    .market-title h3 { margin: 0 0 0.35rem; font-size: 1.2rem; }
-    .market-meta { margin: 0; opacity: 0.9; font-size: 0.9rem; }
-    .market-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-    .btn {
-      background: rgba(255,255,255,0.2);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.35);
-      padding: 0.45rem 0.85rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
+    .market-title h3 {
+      margin: 0 0 0.2rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
-    .btn:hover { background: rgba(255,255,255,0.3); }
+    .market-meta { margin: 0; color: var(--ink-soft); font-size: 0.8rem; }
+    .market-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
     .tab-bar {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.25rem;
-      padding: 0.75rem 1rem 0;
-      background: var(--bg-muted);
-      border-bottom: 1px solid var(--border);
+      gap: 0;
+      padding: 0 0.45rem;
+      background: var(--paper);
+      border-bottom: 1px solid var(--rule);
     }
     .tab {
-      border: none;
+      border: 1px solid transparent;
+      border-bottom: none;
       background: transparent;
-      padding: 0.6rem 0.8rem;
+      margin-bottom: -1px;
+      padding: 0.4rem 0.65rem;
       cursor: pointer;
-      border-bottom: 3px solid transparent;
+      font-family: inherit;
       font-weight: 600;
-      color: var(--text-secondary);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
     }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .tab-body { padding: 1rem 1.25rem 1.5rem; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-    th { color: var(--text-primary); font-size: 0.8rem; }
+    .tab.active {
+      color: var(--ink);
+      border-color: var(--rule);
+      background: var(--paper);
+    }
+    .tab-body { padding: 0.65rem 0.7rem 0.85rem; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th, td { text-align: left; padding: 0.28rem 0.4rem; border: 1px solid var(--rule-soft); vertical-align: top; }
+    th {
+      color: var(--ink);
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--muted);
+    }
     .notes {
       max-width: 22rem;
       max-height: 7.5rem;
       overflow-y: auto;
-      color: var(--text-secondary);
-      line-height: 1.4;
+      color: var(--ink-soft);
+      line-height: 1.35;
       padding-right: 0.35rem;
     }
-    .pct { color: var(--accent); font-size: 0.8rem; }
+    .pct { color: var(--ink-soft); font-size: 0.75rem; }
     .badge {
       display: inline-block;
       margin-right: 0.35rem;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 700;
+      padding: 0.05rem 0.3rem;
+      border-radius: 0;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink);
+      background: transparent;
     }
-    .badge.ok { background: #d4edda; color: #155724; }
-    .badge.bad { background: #f8d7da; color: #721c24; }
+    .badge.ok { color: var(--status-ok); background: var(--status-ok-bg); }
+    .badge.bad { color: var(--status-bad); background: var(--status-bad-bg); }
     .unavailable { opacity: 0.65; }
-    .empty, .psi-banner, .law-banner { margin: 0 0 0.75rem; color: var(--text-secondary); }
-    .psi-banner { background: var(--banner-psi-bg); border-left: 3px solid #6f42c1; padding: 0.6rem 0.8rem; }
-    .law-banner { background: var(--banner-law-bg); border-left: 3px solid #fd7e14; padding: 0.6rem 0.8rem; }
+    .empty { margin: 0 0 0.6rem; color: var(--ink-soft); }
+    .note {
+      margin: 0 0 0.65rem;
+      padding: 0.4rem 0.55rem;
+      border: 1px solid var(--rule);
+      color: var(--ink);
+      font-size: 0.82rem;
+    }
+    .note-label {
+      margin-right: 0.45rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .psi-note { background: var(--note-psi-bg); border-color: var(--note-psi-rule); }
+    .law-note { background: var(--note-law-bg); border-color: var(--note-law-rule); }
     @media (max-width: 768px) {
       .market-header { flex-direction: column; }
     }

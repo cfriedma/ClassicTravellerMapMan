@@ -34,17 +34,16 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
       <!-- Header -->
       <header class="subsector-header">
         <div class="header-content">
-          <button class="btn btn-back" (click)="goHome()">
-            ← Back to Home
-          </button>
-          
+          <button class="btn btn-line" type="button" (click)="goHome()">Return</button>
+
           <div class="header-info">
+            <p class="running-kicker">Subsector record</p>
             <h1>{{ subsectorData.name }}</h1>
             <div class="subsector-meta">
-              <span class="subsector-code">Code: {{ subsectorData.id }}</span>
-              <span class="subsector-date">Created: {{ subsectorData.createdAt | date:'short' }}</span>
-              <button class="btn btn-copy" (click)="copyCode()">📋 Copy Code</button>
-              <button class="btn btn-share" (click)="shareUrl()">🔗 Share URL</button>
+              <span class="subsector-code mono">{{ subsectorData.id }}</span>
+              <span class="subsector-date">Filed {{ subsectorData.createdAt | date:'mediumDate' }}</span>
+              <button class="btn btn-line btn-small" type="button" (click)="copyCode()">Copy code</button>
+              <button class="btn btn-line btn-small" type="button" (click)="shareUrl()">Share</button>
             </div>
           </div>
 
@@ -55,7 +54,7 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
               [class.active]="editMode"
               [attr.aria-pressed]="editMode"
               (click)="editMode = !editMode"
-            >Edit mode</button>
+            >{{ editMode ? 'Editing' : 'Edit' }}</button>
             <app-settings-menu></app-settings-menu>
           </div>
         </div>
@@ -85,6 +84,7 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
             (click)="onCanvasClick($event)"
             (mousemove)="onCanvasMouseMove($event)"
           ></canvas>
+          <p class="plate-caption">Figure 1. Subsector plate</p>
         </div>
 
         <!-- World Detail Panel -->
@@ -92,95 +92,118 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
           <div class="world-detail-panel">
             <div class="panel-header">
               <h3>{{ worldHeading }}</h3>
-              <button class="btn btn-close" (click)="clearSelection()">×</button>
+              <button class="btn btn-line btn-small" type="button" (click)="clearSelection()">Close</button>
             </div>
-            
+
             <div class="panel-content">
-              <div class="detail-grid" *ngIf="editMode; else worldReadOnly">
-                <ng-container *ngIf="selectedHex.world.isHabitableForAnimals()">
-                  <div class="detail-item">
-                    <label for="world-local-name">Local name:</label>
-                    <input
-                      id="world-local-name"
-                      class="field-control"
-                      [ngModel]="selectedHex.world.localName"
-                      (ngModelChange)="selectedHex.world.localName = $event"
-                      (change)="commitText()"
-                    />
-                  </div>
-                  <div class="detail-item">
-                    <label for="world-description">Description:</label>
-                    <textarea
-                      id="world-description"
-                      class="field-control"
-                      rows="3"
-                      [ngModel]="selectedHex.world.description"
-                      (ngModelChange)="selectedHex.world.description = $event"
-                      (change)="commitText()"
-                    ></textarea>
-                  </div>
-                </ng-container>
+              <table class="spec" *ngIf="editMode; else worldReadOnly">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Code</th>
+                    <th>Remark</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ng-container *ngIf="selectedHex.world.isHabitableForAnimals()">
+                    <tr>
+                      <th><label for="world-local-name">Local name</label></th>
+                      <td colspan="2">
+                        <input
+                          id="world-local-name"
+                          class="field-control"
+                          [ngModel]="selectedHex.world.localName"
+                          (ngModelChange)="selectedHex.world.localName = $event"
+                          (change)="commitText()"
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <th><label for="world-description">Description</label></th>
+                      <td colspan="2">
+                        <textarea
+                          id="world-description"
+                          class="field-control"
+                          rows="3"
+                          [ngModel]="selectedHex.world.description"
+                          (ngModelChange)="selectedHex.world.description = $event"
+                          (change)="commitText()"
+                        ></textarea>
+                      </td>
+                    </tr>
+                  </ng-container>
 
-                <div class="detail-item">
-                  <label for="world-starport">Starport:</label>
-                  <select
-                    id="world-starport"
-                    class="field-control starport-{{ selectedHex.world.starportType }}"
-                    [ngModel]="selectedHex.world.starportType"
-                    (ngModelChange)="setStarport($event)"
-                  >
-                    <option *ngFor="let type of starportTypes" [ngValue]="type">
-                      {{ type }} - {{ getStarportDescription(type) }}
-                    </option>
-                  </select>
-                </div>
+                  <tr>
+                    <th><label for="world-starport">Starport</label></th>
+                    <td>
+                      <select
+                        id="world-starport"
+                        class="field-control mono starport-{{ selectedHex.world.starportType }}"
+                        [ngModel]="selectedHex.world.starportType"
+                        (ngModelChange)="setStarport($event)"
+                      >
+                        <option *ngFor="let type of starportTypes" [ngValue]="type">{{ type }}</option>
+                      </select>
+                    </td>
+                    <td class="starport-{{ selectedHex.world.starportType }}">{{ getStarportDescription(selectedHex.world.starportType) }}</td>
+                  </tr>
 
-                <div class="detail-item">
-                  <label for="world-size">Size:</label>
-                  <select id="world-size" class="field-control" [ngModel]="selectedHex.world.planetSize.key" (ngModelChange)="setPlanetSize($event)">
-                    <option *ngFor="let key of sizeKeys" [ngValue]="key">{{ key }}</option>
-                  </select>
-                  <span>{{ selectedHex.world.planetSize.label }}</span>
-                </div>
+                  <tr>
+                    <th><label for="world-size">Size</label></th>
+                    <td>
+                      <select id="world-size" class="field-control mono" [ngModel]="selectedHex.world.planetSize.key" (ngModelChange)="setPlanetSize($event)">
+                        <option *ngFor="let key of sizeKeys" [ngValue]="key">{{ key }}</option>
+                      </select>
+                    </td>
+                    <td>{{ selectedHex.world.planetSize.label }}</td>
+                  </tr>
 
-                <div class="detail-item">
-                  <label for="world-atmosphere">Atmosphere:</label>
-                  <select id="world-atmosphere" class="field-control" [ngModel]="selectedHex.world.planetAtmosphere.key" (ngModelChange)="setPlanetAtmosphere($event)">
-                    <option *ngFor="let key of atmosphereKeys" [ngValue]="key">{{ key }}</option>
-                  </select>
-                  <span>{{ selectedHex.world.planetAtmosphere.label }}</span>
-                </div>
+                  <tr>
+                    <th><label for="world-atmosphere">Atmosphere</label></th>
+                    <td>
+                      <select id="world-atmosphere" class="field-control mono" [ngModel]="selectedHex.world.planetAtmosphere.key" (ngModelChange)="setPlanetAtmosphere($event)">
+                        <option *ngFor="let key of atmosphereKeys" [ngValue]="key">{{ key }}</option>
+                      </select>
+                    </td>
+                    <td>{{ selectedHex.world.planetAtmosphere.label }}</td>
+                  </tr>
 
-                <div class="detail-item">
-                  <label for="world-hydrographics">Hydrographics:</label>
-                  <select id="world-hydrographics" class="field-control" [ngModel]="selectedHex.world.planetHydrographics.key" (ngModelChange)="setPlanetHydrographics($event)">
-                    <option *ngFor="let key of hydroKeys" [ngValue]="key">{{ key }}</option>
-                  </select>
-                  <span>{{ selectedHex.world.planetHydrographics.label }}</span>
-                </div>
+                  <tr>
+                    <th><label for="world-hydrographics">Hydrographics</label></th>
+                    <td>
+                      <select id="world-hydrographics" class="field-control mono" [ngModel]="selectedHex.world.planetHydrographics.key" (ngModelChange)="setPlanetHydrographics($event)">
+                        <option *ngFor="let key of hydroKeys" [ngValue]="key">{{ key }}</option>
+                      </select>
+                    </td>
+                    <td>{{ selectedHex.world.planetHydrographics.label }}</td>
+                  </tr>
 
-                <div class="detail-item">
-                  <label for="world-population">Population:</label>
-                  <select id="world-population" class="field-control" [ngModel]="selectedHex.world.planetPopulation.key" (ngModelChange)="setPlanetPopulation($event)">
-                    <option *ngFor="let key of populationKeys" [ngValue]="key">{{ key }}</option>
-                  </select>
-                  <span>{{ selectedHex.world.planetPopulation.label }}</span>
-                </div>
+                  <tr>
+                    <th><label for="world-population">Population</label></th>
+                    <td>
+                      <select id="world-population" class="field-control mono" [ngModel]="selectedHex.world.planetPopulation.key" (ngModelChange)="setPlanetPopulation($event)">
+                        <option *ngFor="let key of populationKeys" [ngValue]="key">{{ key }}</option>
+                      </select>
+                    </td>
+                    <td>{{ selectedHex.world.planetPopulation.label }}</td>
+                  </tr>
 
-                <div class="detail-item">
-                  <label for="world-government">Government:</label>
-                  <select id="world-government" class="field-control" [ngModel]="selectedHex.world.planetGovernment.key" (ngModelChange)="setPlanetGovernment($event)">
-                    <option *ngFor="let key of governmentKeys" [ngValue]="key">{{ key }}</option>
-                  </select>
-                  <span>{{ selectedHex.world.planetGovernment.label }}</span>
-                </div>
+                  <tr>
+                    <th><label for="world-government">Government</label></th>
+                    <td>
+                      <select id="world-government" class="field-control mono" [ngModel]="selectedHex.world.planetGovernment.key" (ngModelChange)="setPlanetGovernment($event)">
+                        <option *ngFor="let key of governmentKeys" [ngValue]="key">{{ key }}</option>
+                      </select>
+                    </td>
+                    <td>{{ selectedHex.world.planetGovernment.label }}</td>
+                  </tr>
 
-                <div class="detail-item" *ngIf="selectedHex.world.planetGovernment.key === 7 && selectedHex.world.balkanStates?.length">
-                  <label>Balkan states:</label>
-                  <div class="balkan-states">
-                    <div *ngFor="let state of selectedHex.world.balkanStates; let i = index" class="balkan-state">
-                      <strong>{{ i === 0 ? 'Starport' : 'State ' + (i + 1) }}</strong>
-                      <label [attr.for]="'balkan-gov-' + i">Government</label>
+                  <ng-container *ngIf="selectedHex.world.planetGovernment.key === 7 && selectedHex.world.balkanStates?.length">
+                  <tr *ngFor="let state of selectedHex.world.balkanStates; let i = index">
+                    <th>{{ i === 0 ? 'Starport state' : 'State ' + (i + 1) }}</th>
+                    <td class="mono">{{ state.government.key }}/{{ state.lawLevel.key }}</td>
+                    <td class="balkan-edit">
+                      <label [attr.for]="'balkan-gov-' + i">Gov</label>
                       <select
                         [id]="'balkan-gov-' + i"
                         class="field-control"
@@ -200,197 +223,264 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
                         <option *ngFor="let key of lawKeys" [ngValue]="key">{{ key }}</option>
                       </select>
                       <span>{{ state.lawLevel.label }}</span>
-                    </div>
-                  </div>
-                </div>
+                    </td>
+                  </tr>
+                  </ng-container>
 
-                <div class="detail-item">
-                  <label for="world-law">Law Level:</label>
-                  <select id="world-law" class="field-control" [ngModel]="selectedHex.world.planetLawLevel.key" (ngModelChange)="setPlanetLaw($event)">
-                    <option *ngFor="let key of lawKeys" [ngValue]="key">{{ key }}</option>
-                  </select>
-                  <span>{{ selectedHex.world.planetLawLevel.label }}</span>
-                </div>
+                  <tr>
+                    <th><label for="world-law">Law level</label></th>
+                    <td>
+                      <select id="world-law" class="field-control mono" [ngModel]="selectedHex.world.planetLawLevel.key" (ngModelChange)="setPlanetLaw($event)">
+                        <option *ngFor="let key of lawKeys" [ngValue]="key">{{ key }}</option>
+                      </select>
+                    </td>
+                    <td>{{ selectedHex.world.planetLawLevel.label }}</td>
+                  </tr>
 
-                <div class="detail-item">
-                  <label for="world-tech">Tech Level:</label>
-                  <select id="world-tech" class="field-control" [ngModel]="selectedHex.world.planetTechLevel" (ngModelChange)="setTechLevel($event)">
-                    <option *ngFor="let key of techKeys" [ngValue]="key">{{ key }}</option>
-                  </select>
-                </div>
+                  <tr>
+                    <th><label for="world-tech">Tech level</label></th>
+                    <td>
+                      <select id="world-tech" class="field-control mono" [ngModel]="selectedHex.world.planetTechLevel" (ngModelChange)="setTechLevel($event)">
+                        <option *ngFor="let key of techKeys" [ngValue]="key">{{ key }}</option>
+                      </select>
+                    </td>
+                    <td></td>
+                  </tr>
 
-                <div class="detail-item">
-                  <label>Trade classifications:</label>
-                  <span *ngIf="selectedHex.world.getTradeClassLabels().length; else noTradeClasses">
-                    {{ selectedHex.world.getTradeClassLabels().join(', ') }}
-                  </span>
-                  <ng-template #noTradeClasses><span>None</span></ng-template>
-                </div>
+                  <tr>
+                    <th>Trade</th>
+                    <td class="mono">—</td>
+                    <td>
+                      <span *ngIf="selectedHex.world.getTradeClassLabels().length; else noTradeClasses">
+                        {{ selectedHex.world.getTradeClassLabels().join(', ') }}
+                      </span>
+                      <ng-template #noTradeClasses>None</ng-template>
+                    </td>
+                  </tr>
 
-                <div class="detail-item">
-                  <label>Bases:</label>
-                  <div class="check-row">
-                    <label class="check">
-                      <input type="checkbox" [ngModel]="selectedHex.world.hasNavalBase" (ngModelChange)="setNavalBase($event)" />
-                      Naval
-                    </label>
-                    <label class="check">
-                      <input type="checkbox" [ngModel]="selectedHex.world.hasScoutBase" (ngModelChange)="setScoutBase($event)" />
-                      Scout
-                    </label>
-                    <label class="check">
-                      <input type="checkbox" [ngModel]="selectedHex.hasGasGiant" (ngModelChange)="setGasGiant($event)" />
-                      Gas Giant
-                    </label>
-                    <label class="check" *ngIf="psionicsEnabled">
-                      <input type="checkbox" [ngModel]="selectedHex.world.hasPsionicInstitute" (ngModelChange)="setPsionicInstitute($event)" />
-                      Psionic Institute
-                    </label>
-                  </div>
-                </div>
+                  <tr>
+                    <th>Bases</th>
+                    <td class="mono">
+                      <span class="mark naval" *ngIf="selectedHex.world.hasNavalBase">N</span>
+                      <span class="mark scout" *ngIf="selectedHex.world.hasScoutBase">S</span>
+                      <span class="mark gas" *ngIf="selectedHex.hasGasGiant">G</span>
+                      <span class="mark psi" *ngIf="psionicsEnabled && selectedHex.world.hasPsionicInstitute">I</span>
+                      <span *ngIf="!selectedHex.world.hasNavalBase && !selectedHex.world.hasScoutBase && !selectedHex.hasGasGiant && !(psionicsEnabled && selectedHex.world.hasPsionicInstitute)">—</span>
+                    </td>
+                    <td>
+                      <div class="check-row">
+                        <label class="check">
+                          <input type="checkbox" [ngModel]="selectedHex.world.hasNavalBase" (ngModelChange)="setNavalBase($event)" />
+                          Naval
+                        </label>
+                        <label class="check">
+                          <input type="checkbox" [ngModel]="selectedHex.world.hasScoutBase" (ngModelChange)="setScoutBase($event)" />
+                          Scout
+                        </label>
+                        <label class="check">
+                          <input type="checkbox" [ngModel]="selectedHex.hasGasGiant" (ngModelChange)="setGasGiant($event)" />
+                          Gas giant
+                        </label>
+                        <label class="check" *ngIf="psionicsEnabled">
+                          <input type="checkbox" [ngModel]="selectedHex.world.hasPsionicInstitute" (ngModelChange)="setPsionicInstitute($event)" />
+                          Psionic institute
+                        </label>
+                      </div>
+                    </td>
+                  </tr>
 
-                <div class="detail-item" *ngIf="psionicsEnabled">
-                  <label for="world-punishment">Psionic Punishment:</label>
-                  <select
-                    id="world-punishment"
-                    class="field-control"
-                    [ngModel]="selectedHex.world.psionicPunishment"
-                    (ngModelChange)="setPsionicPunishment($event)"
-                  >
-                    <option *ngFor="let punishment of psionicPunishments" [ngValue]="punishment">{{ punishment }}</option>
-                  </select>
-                </div>
+                  <tr *ngIf="psionicsEnabled">
+                    <th><label for="world-punishment">Psionic punishment</label></th>
+                    <td colspan="2">
+                      <select
+                        id="world-punishment"
+                        class="field-control"
+                        [ngModel]="selectedHex.world.psionicPunishment"
+                        (ngModelChange)="setPsionicPunishment($event)"
+                      >
+                        <option *ngFor="let punishment of psionicPunishments" [ngValue]="punishment">{{ punishment }}</option>
+                      </select>
+                    </td>
+                  </tr>
 
-                <div class="detail-item">
-                  <label>Trade Routes:</label>
-                  <div class="trade-routes-list" *ngIf="getTradeRouteDetails(selectedHex.world).length">
-                    <div *ngFor="let route of getTradeRouteDetails(selectedHex.world)" class="trade-route">
-                      <span>{{ route.destination }} (Jump-{{ route.distance }})</span>
-                      <button type="button" class="btn-inline" (click)="removeRoute(route.index)">Remove</button>
-                    </div>
-                  </div>
-                  <span *ngIf="!getTradeRouteDetails(selectedHex.world).length">None</span>
-                  <label for="world-add-route">Add route</label>
-                  <select id="world-add-route" class="field-control" [ngModel]="routeTarget" (ngModelChange)="addRoute($event)">
-                    <option [ngValue]="-1">Choose a world</option>
-                    <option *ngFor="let candidate of routeCandidates" [ngValue]="candidate.index">{{ candidate.label }}</option>
-                  </select>
-                </div>
-              </div>
+                  <tr>
+                    <th>Routes</th>
+                    <td class="mono">{{ getTradeRouteDetails(selectedHex.world).length || '—' }}</td>
+                    <td>
+                      <div class="trade-routes-list" *ngIf="getTradeRouteDetails(selectedHex.world).length">
+                        <div *ngFor="let route of getTradeRouteDetails(selectedHex.world)" class="trade-route">
+                          <span><span class="mono">J{{ route.distance }}</span> {{ route.destination }}</span>
+                          <button type="button" class="btn btn-line btn-small" (click)="removeRoute(route.index)">Remove</button>
+                        </div>
+                      </div>
+                      <span *ngIf="!getTradeRouteDetails(selectedHex.world).length">None</span>
+                      <label for="world-add-route">Add route</label>
+                      <select id="world-add-route" class="field-control" [ngModel]="routeTarget" (ngModelChange)="addRoute($event)">
+                        <option [ngValue]="-1">Choose a world</option>
+                        <option *ngFor="let candidate of routeCandidates" [ngValue]="candidate.index">{{ candidate.label }}</option>
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
               <ng-template #worldReadOnly>
-                <div class="detail-grid">
-                  <div class="detail-item" *ngIf="selectedHex.world.isHabitableForAnimals() && selectedHex.world.description?.trim()">
-                    <label>Description:</label>
-                    <span>{{ selectedHex.world.description }}</span>
-                  </div>
-                  <div class="detail-item">
-                    <label>Starport:</label>
-                    <span class="starport-{{ selectedHex.world.starportType }}">
-                      {{ selectedHex.world.starportType }} - {{ getStarportDescription(selectedHex.world.starportType) }}
-                    </span>
-                  </div>
-                  <div class="detail-item">
-                    <label>Size:</label>
-                    <span>{{ selectedHex.world.planetSize.key }} ({{ selectedHex.world.planetSize.label }})</span>
-                  </div>
-                  <div class="detail-item">
-                    <label>Atmosphere:</label>
-                    <span>{{ selectedHex.world.planetAtmosphere.key }} ({{ selectedHex.world.planetAtmosphere.label }})</span>
-                  </div>
-                  <div class="detail-item">
-                    <label>Hydrographics:</label>
-                    <span>{{ selectedHex.world.planetHydrographics.key }} ({{ selectedHex.world.planetHydrographics.label }})</span>
-                  </div>
-                  <div class="detail-item">
-                    <label>Population:</label>
-                    <span>{{ selectedHex.world.planetPopulation.key }} ({{ selectedHex.world.planetPopulation.label }})</span>
-                  </div>
-                  <div class="detail-item">
-                    <label>Government:</label>
-                    <span>{{ selectedHex.world.planetGovernment.key }} ({{ selectedHex.world.planetGovernment.label }})</span>
-                  </div>
-                  <div class="detail-item" *ngIf="autoRollBalkanization && selectedHex.world.balkanStates?.length">
-                    <label>Balkan states:</label>
-                    <div class="balkan-states">
-                      <div *ngFor="let state of selectedHex.world.balkanStates; let i = index" class="balkan-state">
-                        <strong>{{ i === 0 ? 'Starport' : 'State ' + (i + 1) }}:</strong>
-                        Gov {{ state.government.key }} ({{ state.government.label }})
-                        · Law {{ state.lawLevel.key }} ({{ state.lawLevel.label }})
-                      </div>
-                    </div>
-                  </div>
-                  <div class="detail-item">
-                    <label>Law Level:</label>
-                    <span>{{ selectedHex.world.planetLawLevel.key }} ({{ selectedHex.world.planetLawLevel.label }})</span>
-                  </div>
-                  <div class="detail-item">
-                    <label>Tech Level:</label>
-                    <span>{{ selectedHex.world.planetTechLevel }}</span>
-                  </div>
-                  <div class="detail-item" *ngIf="selectedHex.world.hasNavalBase || selectedHex.world.hasScoutBase || selectedHex.hasGasGiant">
-                    <label>Bases:</label>
-                    <span>
-                      <span *ngIf="selectedHex.world.hasNavalBase" class="base-tag naval">Naval Base</span>
-                      <span *ngIf="selectedHex.world.hasScoutBase" class="base-tag scout">Scout Base</span>
-                      <span *ngIf="selectedHex.hasGasGiant" class="base-tag gas-giant">Gas Giant</span>
-                    </span>
-                  </div>
-                  <div class="detail-item" *ngIf="psionicsEnabled && selectedHex.world.hasPsionicInstitute">
-                    <label>Special:</label>
-                    <span class="base-tag psionic">Psionic Institute</span>
-                  </div>
-                  <div class="detail-item" *ngIf="psionicsEnabled && selectedHex.world.psionicPunishment">
-                    <label>Psionic Punishment:</label>
-                    <span>{{ selectedHex.world.psionicPunishment }}</span>
-                  </div>
-                  <div class="detail-item" *ngIf="selectedHex.world.spaceLanes.length > 0">
-                    <label>Trade Routes:</label>
-                    <div class="trade-routes-list">
-                      <div *ngFor="let route of getTradeRouteDetails(selectedHex.world)" class="trade-route">
-                        {{ route.destination }} (Jump-{{ route.distance }})
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <table class="spec">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Code</th>
+                      <th>Remark</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="selectedHex.world.isHabitableForAnimals() && selectedHex.world.description?.trim()">
+                      <th>Description</th>
+                      <td colspan="2">{{ selectedHex.world.description }}</td>
+                    </tr>
+                    <tr>
+                      <th>Starport</th>
+                      <td class="mono starport-{{ selectedHex.world.starportType }}">{{ selectedHex.world.starportType }}</td>
+                      <td>{{ getStarportDescription(selectedHex.world.starportType) }}</td>
+                    </tr>
+                    <tr>
+                      <th>Size</th>
+                      <td class="mono">{{ selectedHex.world.planetSize.key }}</td>
+                      <td>{{ selectedHex.world.planetSize.label }}</td>
+                    </tr>
+                    <tr>
+                      <th>Atmosphere</th>
+                      <td class="mono">{{ selectedHex.world.planetAtmosphere.key }}</td>
+                      <td>{{ selectedHex.world.planetAtmosphere.label }}</td>
+                    </tr>
+                    <tr>
+                      <th>Hydrographics</th>
+                      <td class="mono">{{ selectedHex.world.planetHydrographics.key }}</td>
+                      <td>{{ selectedHex.world.planetHydrographics.label }}</td>
+                    </tr>
+                    <tr>
+                      <th>Population</th>
+                      <td class="mono">{{ selectedHex.world.planetPopulation.key }}</td>
+                      <td>{{ selectedHex.world.planetPopulation.label }}</td>
+                    </tr>
+                    <tr>
+                      <th>Government</th>
+                      <td class="mono">{{ selectedHex.world.planetGovernment.key }}</td>
+                      <td>{{ selectedHex.world.planetGovernment.label }}</td>
+                    </tr>
+                    <ng-container *ngIf="autoRollBalkanization && selectedHex.world.balkanStates?.length">
+                    <tr *ngFor="let state of selectedHex.world.balkanStates; let i = index">
+                      <th>{{ i === 0 ? 'Starport state' : 'State ' + (i + 1) }}</th>
+                      <td class="mono">{{ state.government.key }}/{{ state.lawLevel.key }}</td>
+                      <td>Gov {{ state.government.label }}. Law {{ state.lawLevel.label }}.</td>
+                    </tr>
+                    </ng-container>
+                    <tr>
+                      <th>Law level</th>
+                      <td class="mono">{{ selectedHex.world.planetLawLevel.key }}</td>
+                      <td>{{ selectedHex.world.planetLawLevel.label }}</td>
+                    </tr>
+                    <tr>
+                      <th>Tech level</th>
+                      <td class="mono">{{ selectedHex.world.planetTechLevel }}</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <th>Trade</th>
+                      <td class="mono">—</td>
+                      <td>
+                        <span *ngIf="selectedHex.world.getTradeClassLabels().length; else noTradeRead">
+                          {{ selectedHex.world.getTradeClassLabels().join(', ') }}
+                        </span>
+                        <ng-template #noTradeRead>None</ng-template>
+                      </td>
+                    </tr>
+                    <tr *ngIf="selectedHex.world.hasNavalBase || selectedHex.world.hasScoutBase || selectedHex.hasGasGiant || (psionicsEnabled && selectedHex.world.hasPsionicInstitute)">
+                      <th>Bases</th>
+                      <td class="mono">
+                        <span class="mark naval" *ngIf="selectedHex.world.hasNavalBase">N</span>
+                        <span class="mark scout" *ngIf="selectedHex.world.hasScoutBase">S</span>
+                        <span class="mark gas" *ngIf="selectedHex.hasGasGiant">G</span>
+                        <span class="mark psi" *ngIf="psionicsEnabled && selectedHex.world.hasPsionicInstitute">I</span>
+                      </td>
+                      <td>
+                        <span *ngIf="selectedHex.world.hasNavalBase">Naval</span>
+                        <span *ngIf="selectedHex.world.hasScoutBase"> Scout</span>
+                        <span *ngIf="selectedHex.hasGasGiant"> Gas giant</span>
+                        <span *ngIf="psionicsEnabled && selectedHex.world.hasPsionicInstitute"> Psionic institute</span>
+                      </td>
+                    </tr>
+                    <tr *ngIf="psionicsEnabled && selectedHex.world.psionicPunishment">
+                      <th>Psionic punishment</th>
+                      <td colspan="2">{{ selectedHex.world.psionicPunishment }}</td>
+                    </tr>
+                    <tr *ngIf="selectedHex.world.spaceLanes.length > 0">
+                      <th>Routes</th>
+                      <td class="mono">{{ getTradeRouteDetails(selectedHex.world).length }}</td>
+                      <td>
+                        <div *ngFor="let route of getTradeRouteDetails(selectedHex.world)">
+                          <span class="mono">J{{ route.distance }}</span> {{ route.destination }}
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </ng-template>
             </div>
           </div>
           <div class="world-actions">
-            <button type="button" class="btn-market" (click)="openMarket()">Equipment &amp; Market</button>
+            <button type="button" class="btn" (click)="openMarket()">Equipment and market</button>
             <button
               type="button"
-              class="btn-market"
+              class="btn btn-line"
               *ngIf="selectedHex.world.allowsEncounterTables(generateAllEcosystems)"
               (click)="openEncounters()"
-            >Encounter Tables</button>
+            >Encounter tables</button>
           </div>
         </div>
 
         <div class="world-detail-column" *ngIf="selectedHex && !selectedHex.world && (editMode || selectedHex.hasGasGiant)">
           <div class="world-detail-panel">
             <div class="panel-header">
-              <h3>{{ getHexCoordinates(selectedHexIndex) }} - System</h3>
-              <button class="btn btn-close" (click)="clearSelection()">×</button>
+              <h3>{{ getHexCoordinates(selectedHexIndex) }} — System</h3>
+              <button class="btn btn-line btn-small" type="button" (click)="clearSelection()">Close</button>
             </div>
             <div class="panel-content">
-              <div class="detail-grid">
-                <div class="detail-item">
-                  <label>Mainworld:</label>
-                  <span>None</span>
-                </div>
-                <div class="detail-item" *ngIf="editMode; else gasGiantReadOnly">
-                  <label class="check">
-                    <input type="checkbox" [ngModel]="selectedHex.hasGasGiant" (ngModelChange)="setGasGiant($event)" />
-                    Gas Giant
-                  </label>
-                </div>
-                <ng-template #gasGiantReadOnly>
-                  <div class="detail-item">
-                    <label>Bases:</label>
-                    <span class="base-tag gas-giant">Gas Giant</span>
-                  </div>
-                </ng-template>
-              </div>
+              <table class="spec">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Code</th>
+                    <th>Remark</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>Mainworld</th>
+                    <td class="mono">—</td>
+                    <td>None</td>
+                  </tr>
+                  <tr *ngIf="editMode; else gasGiantReadOnly">
+                    <th>Gas giant</th>
+                    <td class="mono">
+                      <span class="mark gas" *ngIf="selectedHex.hasGasGiant">G</span>
+                      <span *ngIf="!selectedHex.hasGasGiant">—</span>
+                    </td>
+                    <td>
+                      <label class="check">
+                        <input type="checkbox" [ngModel]="selectedHex.hasGasGiant" (ngModelChange)="setGasGiant($event)" />
+                        Present
+                      </label>
+                    </td>
+                  </tr>
+                  <ng-template #gasGiantReadOnly>
+                    <tr>
+                      <th>Gas giant</th>
+                      <td class="mono"><span class="mark gas">G</span></td>
+                      <td>Present</td>
+                    </tr>
+                  </ng-template>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -410,125 +500,106 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
 
     <ng-template #notFound>
       <div class="not-found">
-        <h1>Subsector Not Found</h1>
-        <p>The subsector you're looking for doesn't exist or has been deleted.</p>
-        <button class="btn btn-primary" (click)="goHome()">Return to Home</button>
+        <h1>Subsector not found</h1>
+        <p>The requested record is not on file.</p>
+        <button class="btn" type="button" (click)="goHome()">Return</button>
       </div>
     </ng-template>
   `,
   styles: [`
     .subsector-container {
       min-height: 100vh;
-      background: var(--bg-page);
+      background: var(--paper);
+      color: var(--ink);
     }
 
     .subsector-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 2rem 1rem;
+      background: var(--paper);
+      color: var(--ink);
+      --control: var(--ink);
+      --control-inverse: var(--paper);
+      border-bottom: 2px solid var(--ink);
+      padding: 0.7rem 1rem;
     }
 
     .header-content {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
       display: flex;
-      align-items: center;
-      gap: 2rem;
+      align-items: flex-start;
+      gap: 1rem;
     }
 
     .header-info {
       flex: 1;
+      min-width: 0;
+    }
+
+    .running-kicker {
+      margin: 0 0 0.15rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
     }
 
     .header-tools {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.45rem;
       flex-shrink: 0;
     }
 
     .edit-mode-toggle {
-      height: 2.6rem;
-      padding: 0 0.9rem;
-      border-radius: 8px;
-      border: 2px solid rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.18);
-      color: white;
+      height: 2.1rem;
+      padding: 0 0.65rem;
+      border: 1px solid var(--ink);
+      border-radius: 0;
+      background: var(--paper);
+      color: var(--ink);
       cursor: pointer;
+      font-family: inherit;
       font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .edit-mode-toggle:hover,
-    .edit-mode-toggle.active {
-      background: rgba(255, 255, 255, 0.3);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .edit-mode-toggle.active {
-      background: white;
-      color: #4c3f91;
-      border-color: white;
-    }
-
-    .btn-back {
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .btn-back:hover {
-      background: rgba(255, 255, 255, 0.3);
-      border-color: rgba(255, 255, 255, 0.5);
+      background: var(--ink);
+      color: var(--paper);
     }
 
     .header-info h1 {
-      margin: 0 0 1rem 0;
-      font-size: 2.5rem;
+      margin: 0 0 0.3rem;
+      font-size: 1.15rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .subsector-meta {
       display: flex;
       align-items: center;
-      gap: 2rem;
+      gap: 0.65rem;
       flex-wrap: wrap;
     }
 
     .subsector-code {
-      font-family: 'Courier New', monospace;
-      background: rgba(255, 255, 255, 0.2);
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-weight: bold;
+      letter-spacing: 0.08em;
     }
 
     .subsector-date {
-      opacity: 0.8;
-    }
-
-    .btn-copy, .btn-share {
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .btn-copy:hover, .btn-share:hover {
-      background: rgba(255, 255, 255, 0.3);
+      color: var(--ink-soft);
+      font-size: 0.82rem;
     }
 
     .hex-map-container {
       max-width: 1400px;
-      margin: 2rem auto;
+      margin: 0.85rem auto;
       padding: 0 1rem;
       display: flex;
-      gap: 2rem;
+      gap: 0.85rem;
       align-items: flex-start;
     }
 
@@ -541,12 +612,12 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
       min-width: min-content;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: 0.85rem;
     }
 
     .map-and-detail {
       display: flex;
-      gap: 2rem;
+      gap: 0.85rem;
       align-items: flex-start;
     }
 
@@ -554,8 +625,8 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
       width: min(1240px, calc(100vw - 28rem));
       min-width: 980px;
       flex-shrink: 0;
-      height: calc(100vh - 12rem);
-      max-height: calc(100vh - 12rem);
+      height: calc(100vh - 8.5rem);
+      max-height: calc(100vh - 8.5rem);
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -565,279 +636,188 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
     .hex-map {
       flex: 1;
       min-width: 24rem;
-      background: var(--bg-card);
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 4px 20px var(--shadow);
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      border-radius: 0;
+      padding: 0.65rem 0.75rem 0.55rem;
+      box-shadow: none;
       overflow: auto;
-      max-height: calc(100vh - 12rem);
+      max-height: calc(100vh - 8.5rem);
       overscroll-behavior: contain;
     }
 
     .hex-canvas {
       display: block;
       margin: 0 auto;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      border: 1px solid var(--rule-soft);
+      border-radius: 0;
       cursor: pointer;
-      background: var(--bg-canvas);
+      background: var(--paper);
     }
 
     .world-detail-column {
-      width: 400px;
-      min-width: 400px;
+      width: 26rem;
+      min-width: 26rem;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
 
     .world-detail-panel {
-      background: var(--bg-card);
-      border-radius: 12px;
-      box-shadow: 0 4px 20px var(--shadow);
+      background: var(--paper);
+      border: 1px solid var(--ink);
+      border-radius: 0;
+      box-shadow: none;
       max-height: 700px;
       overflow-y: auto;
     }
 
     .panel-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 1.5rem;
+      background: var(--paper);
+      color: var(--ink);
+      padding: 0.4rem 0.55rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-radius: 12px 12px 0 0;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--ink);
+      border-radius: 0;
     }
 
     .panel-header h3 {
       margin: 0;
-      font-size: 1.2rem;
-    }
-
-    .btn-close {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0.25rem;
-      border-radius: 4px;
-      transition: background-color 0.3s ease;
-    }
-
-    .btn-close:hover {
-      background: rgba(255, 255, 255, 0.2);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .panel-content {
-      padding: 1.5rem;
+      padding: 0.45rem;
     }
 
-    .detail-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+    .spec tbody th {
+      width: 7.2rem;
+      font-weight: 600;
+      white-space: nowrap;
     }
 
-    .detail-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .detail-item label {
-      font-weight: bold;
-      color: var(--text-primary);
-      font-size: 0.9rem;
-    }
-
-    .detail-item span {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
+    .spec td.mono,
+    .spec .mono {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
     }
 
     .field-control {
       width: 100%;
       box-sizing: border-box;
-      padding: 0.4rem 0.5rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg-card);
-      color: var(--text-primary);
+      padding: 0.2rem 0.3rem;
+      border: 1px solid var(--rule);
+      border-radius: 0;
+      background: var(--paper);
+      color: var(--ink);
       font: inherit;
+      font-size: 0.8rem;
     }
 
     .check-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.65rem 1rem;
+      gap: 0.35rem 0.75rem;
     }
 
     .check {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.3rem;
       font-weight: 600;
-      font-size: 0.85rem;
-      color: var(--text-primary);
-    }
-
-    .btn-inline {
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text-primary);
-      border-radius: 4px;
-      padding: 0.15rem 0.45rem;
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-
-    .detail-item .base-tag {
-      color: #fff;
-    }
-
-    .base-tag {
-      display: inline-block;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
       font-size: 0.8rem;
-      font-weight: bold;
-      margin-right: 0.5rem;
     }
 
-    .base-tag.naval {
-      background: #dc3545;
-      color: white;
+    .mark {
+      font-weight: 600;
+      margin-right: 0.35rem;
     }
 
-    .base-tag.scout {
-      background: #28a745;
-      color: white;
-    }
-
-    .base-tag.gas-giant {
-      background: #17a2b8;
-      color: white;
-    }
-
-    .base-tag.psionic {
-      background: #6f42c1;
-      color: white;
-    }
+    .mark.naval { color: var(--mark-naval); }
+    .mark.scout { color: var(--mark-scout); }
+    .mark.gas { color: var(--mark-gas); }
+    .mark.psi { color: var(--mark-psi); }
 
     .trade-routes-list {
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
+      margin-bottom: 0.4rem;
     }
 
     .trade-route {
-      background: var(--bg-muted);
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      border-left: 3px solid var(--lane);
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 0.5rem;
+      padding: 0.15rem 0;
+      border-bottom: 1px solid var(--rule-soft);
+      font-size: 0.8rem;
     }
 
-    .balkan-states {
+    .balkan-edit {
       display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
+      flex-wrap: wrap;
+      gap: 0.3rem 0.45rem;
+      align-items: center;
     }
 
-    .balkan-state {
-      background: var(--bg-muted);
-      padding: 0.45rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      line-height: 1.4;
+    .balkan-edit .field-control {
+      width: 3.2rem;
     }
 
-    .btn-market {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 0.65rem 1rem;
-      border-radius: 8px;
-      cursor: pointer;
+    .balkan-edit label {
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
       font-weight: 600;
-      width: 100%;
-    }
-
-    .btn-market:hover {
-      box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35);
     }
 
     .world-actions {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
 
-    .starport-A { color: #28a745; font-weight: bold; }
-    .starport-B { color: #17a2b8; font-weight: bold; }
-    .starport-C { color: #ffc107; font-weight: bold; }
-    .starport-D { color: #fd7e14; font-weight: bold; }
-    .starport-E { color: #dc3545; font-weight: bold; }
-    .starport-X { color: #6c757d; font-weight: bold; }
+    .starport-A { color: var(--port-a); font-weight: 600; }
+    .starport-B { color: var(--port-b); font-weight: 600; }
+    .starport-C { color: var(--port-c); font-weight: 600; }
+    .starport-D { color: var(--port-d); font-weight: 600; }
+    .starport-E { color: var(--port-e); font-weight: 600; }
+    .starport-X { color: var(--port-x); font-weight: 600; }
 
     .not-found {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       min-height: 100vh;
-      text-align: center;
       padding: 2rem;
+      max-width: 36rem;
+      margin: 0 auto;
     }
 
     .not-found h1 {
-      font-size: 3rem;
-      color: var(--text-primary);
-      margin-bottom: 1rem;
+      font-size: 1.15rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
     }
 
     .not-found p {
-      font-size: 1.2rem;
-      color: var(--text-secondary);
-      margin-bottom: 2rem;
-    }
-
-    .btn {
-      padding: 1rem 2rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+      color: var(--ink-soft);
+      margin-bottom: 1rem;
     }
 
     @media (max-width: 768px) {
       .header-content {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
-      }
-
-      .subsector-meta {
-        gap: 1rem;
       }
 
       .hex-map-container,
@@ -860,14 +840,6 @@ import { hexCanvasPosition, hexCanvasSize, hexColumn, hexCoordinates, hexIndexAt
         max-height: none;
         display: block;
         overflow: visible;
-      }
-
-      .hex-grid {
-        gap: 2px;
-      }
-
-      .hex-content {
-        font-size: 0.6rem;
       }
     }
   `]
@@ -937,11 +909,12 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     private planetMarket: PlanetMarketService
   ) {}
 
-  ngOnInit(): void {
+    ngOnInit(): void {
     this.settingsService.settings$.pipe(takeUntil(this.destroy$)).subscribe(settings => {
       this.mapScale = settings.mapScale;
       this.redrawCanvas();
     });
+    document.fonts?.ready.then(() => this.redrawCanvas());
 
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
       const id = params['id'];
@@ -1138,34 +1111,30 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     
     // Fill hexagon
     if (hasWorld) {
-      this.ctx.fillStyle = this.canvasColor('--hex-world-fill', '#e3f2fd');
+      this.ctx.fillStyle = this.canvasColor('--hex-world-fill', '#ffffff');
       this.ctx.fill();
     } else {
-      this.ctx.fillStyle = this.canvasColor('--hex-empty-fill', '#f8f9fa');
-      this.ctx.globalAlpha = 0.35;
+      this.ctx.fillStyle = this.canvasColor('--hex-empty-fill', '#ffffff');
       this.ctx.fill();
-      this.ctx.globalAlpha = 1.0;
     }
-    
-    // Stroke hexagon
+
     if (isSelected) {
-      this.ctx.strokeStyle = this.canvasColor('--accent', '#667eea');
-      this.ctx.lineWidth = 3;
+      this.ctx.strokeStyle = this.canvasColor('--hex-selected', '#111111');
+      this.ctx.lineWidth = 2.5;
     } else if (isHovered) {
-      this.ctx.strokeStyle = this.canvasColor('--accent', '#667eea');
-      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = this.canvasColor('--hex-hover', '#111111');
+      this.ctx.lineWidth = 1.75;
     } else if (hasWorld) {
-      this.ctx.strokeStyle = this.canvasColor('--hex-world-stroke', '#2196f3');
-      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = this.canvasColor('--hex-world-stroke', '#111111');
+      this.ctx.lineWidth = 1.5;
     } else {
-      this.ctx.strokeStyle = this.canvasColor('--hex-empty-stroke', '#e1e5e9');
+      this.ctx.strokeStyle = this.canvasColor('--hex-empty-stroke', '#b5b5b5');
       this.ctx.lineWidth = 1;
     }
     this.ctx.stroke();
-    
-    // Draw hex coordinates
-    this.ctx.fillStyle = this.canvasColor('--hex-label', '#666');
-    this.ctx.font = this.scaledFont(10);
+
+    this.ctx.fillStyle = this.canvasColor('--hex-label', '#444444');
+    this.ctx.font = this.scaledFont(10, '"IBM Plex Sans"');
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'top';
     const coords = this.getHexCoordinates(index);
@@ -1175,7 +1144,7 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     if (hasWorld) {
       this.drawWorldInfo(x, y, hex);
     } else if (hex.hasGasGiant) {
-      this.drawMarkerStrip(x, y, [{ letter: 'G', color: '#17a2b8' }]);
+      this.drawMarkerStrip(x, y, [{ letter: 'G', token: '--mark-gas' }]);
     }
   }
 
@@ -1188,18 +1157,18 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     
     const localName = world.isHabitableForAnimals() ? world.localName?.trim() : '';
     if (localName) {
-      this.ctx.fillStyle = this.canvasColor('--hex-label', '#666');
-      this.ctx.font = this.scaledFont(7);
+      this.ctx.fillStyle = this.canvasColor('--hex-label', '#444444');
+      this.ctx.font = this.scaledFont(7, '"IBM Plex Sans"');
       this.ctx.fillText(this.fitCanvasText(localName, this.hexWidth * 0.85), x, y - this.scaled(18));
     }
 
-    // Starport
-    this.ctx.fillStyle = this.canvasColor('--hex-uwp', '#000');
-    this.ctx.font = this.scaledFont(14, 'Arial', true);
+    const port = world.starportType.toLowerCase();
+    this.ctx.fillStyle = this.canvasColor(`--port-${port}`, this.canvasColor('--hex-uwp', '#111111'));
+    this.ctx.font = this.scaledFont(14, '"IBM Plex Sans"', true);
     this.ctx.fillText(world.starportType, x, y - this.scaled(8));
-    
-    // UWP line 1
-    this.ctx.font = this.scaledFont(8, 'Courier New');
+
+    this.ctx.fillStyle = this.canvasColor('--hex-uwp', '#111111');
+    this.ctx.font = this.scaledFont(8, '"IBM Plex Mono"');
     const uwp1 = `${this.formatHex(world.planetSize.key)}${this.formatHex(world.planetAtmosphere.key)}${this.formatHex(world.planetHydrographics.key)}`;
     this.ctx.fillText(uwp1, x, y + this.scaled(4));
     
@@ -1207,32 +1176,33 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     const uwp2 = `${this.formatHex(world.planetPopulation.key)}${this.formatHex(world.planetGovernment.key)}${this.formatHex(world.planetLawLevel.key)}-${this.formatHex(world.planetTechLevel)}`;
     this.ctx.fillText(uwp2, x, y + this.scaled(14));
     
-    const markers: { letter: string; color: string }[] = [];
-    if (world.hasNavalBase) markers.push({ letter: 'N', color: '#dc3545' });
-    if (world.hasScoutBase) markers.push({ letter: 'S', color: '#28a745' });
-    if (hex.hasGasGiant) markers.push({ letter: 'G', color: '#17a2b8' });
+    const markers: { letter: string; token: string }[] = [];
+    if (world.hasNavalBase) markers.push({ letter: 'N', token: '--mark-naval' });
+    if (world.hasScoutBase) markers.push({ letter: 'S', token: '--mark-scout' });
+    if (hex.hasGasGiant) markers.push({ letter: 'G', token: '--mark-gas' });
     if (this.psionicsEnabled && world.hasPsionicInstitute) {
-      markers.push({ letter: 'I', color: '#6f42c1' });
+      markers.push({ letter: 'I', token: '--mark-psi' });
     }
 
     this.drawMarkerStrip(x, y + this.scaled(24), markers);
   }
 
-  private drawMarkerStrip(x: number, y: number, markers: { letter: string; color: string }[]): void {
+  private drawMarkerStrip(x: number, y: number, markers: { letter: string; token: string }[]): void {
     if (!this.ctx || markers.length === 0) {
       return;
     }
 
-    this.ctx.font = this.scaledFont(8, 'Arial', true);
+    this.ctx.font = this.scaledFont(8, '"IBM Plex Sans"', true);
     this.ctx.textAlign = 'left';
     this.ctx.textBaseline = 'middle';
+    const gap = this.scaled(3);
     const widths = markers.map(marker => this.ctx!.measureText(marker.letter).width);
-    const totalWidth = widths.reduce((sum, width) => sum + width, 0);
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, markers.length - 1);
     let cursor = x - totalWidth / 2;
     for (let i = 0; i < markers.length; i++) {
-      this.ctx.fillStyle = markers[i].color;
+      this.ctx.fillStyle = this.canvasColor(markers[i].token, this.canvasColor('--ink', '#111111'));
       this.ctx.fillText(markers[i].letter, cursor, y);
-      cursor += widths[i];
+      cursor += widths[i] + gap;
     }
     this.ctx.textAlign = 'center';
   }
@@ -1242,9 +1212,9 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     
     const processedPairs = new Set<string>();
     
-    this.ctx.strokeStyle = this.canvasColor('--lane', '#2196f3');
-    this.ctx.lineWidth = Math.max(1, this.scaled(2));
-    this.ctx.globalAlpha = 0.6;
+    this.ctx.strokeStyle = this.canvasColor('--lane', '#111111');
+    this.ctx.lineWidth = Math.max(1, this.scaled(1.25));
+    this.ctx.globalAlpha = 1;
     
     for (let i = 0; i < this.subsectorData.subsector.sectorHexes.length; i++) {
       const hex = this.subsectorData.subsector.sectorHexes[i];
@@ -1340,9 +1310,10 @@ export class SubsectorViewComponent implements OnInit, OnDestroy, AfterViewInit 
     return value * this.mapScale;
   }
 
-  private scaledFont(size: number, family = 'Arial', bold = false): string {
+  private scaledFont(size: number, family = '"IBM Plex Sans"', bold = false): string {
     const px = Math.max(6, Math.round(size * this.mapScale));
-    return `${bold ? 'bold ' : ''}${px}px ${family}`;
+    const weight = bold ? '600 ' : '';
+    return `${weight}${px}px ${family}, "IBM Plex Sans", sans-serif`;
   }
 
   private canvasColor(variableName: string, fallback: string): string {

@@ -53,7 +53,7 @@ import {
       <div class="splash-card">
         <header class="splash-header">
           <div>
-            <h1>Configure Subsector</h1>
+            <h1>1. Configure subsector</h1>
             <p>Paint hex types, set world occurrence, then generate.</p>
           </div>
           <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
@@ -62,13 +62,13 @@ import {
         <div class="splash-body">
           <div class="controls">
             <div class="input-group">
-              <label for="setupName">Subsector Name (optional)</label>
+              <label for="setupName">2. Designation (optional)</label>
               <input
                 id="setupName"
                 type="text"
                 [(ngModel)]="name"
                 maxlength="50"
-                placeholder="Enter a name for your subsector..."
+                placeholder="Designation"
               >
             </div>
 
@@ -96,7 +96,7 @@ import {
             </div>
 
             <div class="section-head">
-              <h2>Cell types</h2>
+              <h2>3. Cell types</h2>
               <button
                 type="button"
                 class="btn btn-small"
@@ -161,9 +161,10 @@ import {
 
             <div class="paint-actions">
               <button type="button" class="btn btn-small" (click)="fillSelected()">Fill with selected</button>
-              <button type="button" class="btn btn-small" (click)="resetClassic()">Reset to Classic 8×10</button>
+              <button type="button" class="btn btn-small btn-ghost" (click)="resetClassic()">Reset to Classic 8×10</button>
             </div>
 
+            <h2 class="rules-head">4. Campaign rules</h2>
             <label class="toggle-row">
               <input type="checkbox" [ngModel]="options.psionicsEnabled" (ngModelChange)="setPsionics($event)">
               <span>
@@ -203,6 +204,7 @@ import {
               <span>{{ onMapCount }} on map</span>
               <span>{{ selectedBrushLabel }}</span>
             </div>
+            <p class="plate-caption">Figure 1. Hex plate</p>
             <div class="preview-scroll">
               <canvas
                 #previewCanvas
@@ -228,7 +230,7 @@ import {
             (click)="confirm()"
             [disabled]="!canGenerate"
           >
-            Generate Subsector
+            Generate
           </button>
         </footer>
       </div>
@@ -239,7 +241,7 @@ import {
       position: fixed;
       inset: 0;
       z-index: 80;
-      background: rgba(12, 16, 32, 0.62);
+      background: rgba(0, 0, 0, 0.72);
       display: flex;
       align-items: stretch;
       justify-content: center;
@@ -250,10 +252,11 @@ import {
     .splash-card {
       width: min(1180px, 100%);
       margin: auto;
-      background: var(--bg-card, #fff);
-      color: var(--text-primary, #222);
-      border-radius: 16px;
-      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+      background: var(--paper, #fff);
+      color: var(--ink, #111);
+      border: 1px solid var(--rule, #111);
+      border-radius: 0;
+      box-shadow: none;
       display: flex;
       flex-direction: column;
       max-height: calc(100vh - 2rem);
@@ -261,34 +264,39 @@ import {
 
     .splash-header,
     .splash-footer {
-      padding: 1.25rem 1.5rem;
+      padding: 0.7rem 0.85rem;
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
     }
 
     .splash-header {
-      border-bottom: 1px solid var(--border, #e1e5e9);
+      border-bottom: 1px solid var(--rule, #111);
       justify-content: space-between;
     }
 
-    .splash-header h1 {
-      margin: 0 0 0.25rem;
-      font-size: 1.45rem;
+    .splash-header h1,
+    .section-head h2,
+    .rules-head {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
 
     .splash-header p,
     .hint {
-      margin: 0;
-      color: var(--text-secondary, #666);
-      font-size: 0.92rem;
+      margin: 0.2rem 0 0;
+      color: var(--ink-soft, #444);
+      font-size: 0.82rem;
     }
 
     .splash-body {
       display: grid;
       grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-      gap: 1.25rem;
-      padding: 1.25rem 1.5rem;
+      gap: 0.85rem;
+      padding: 0.75rem 0.85rem;
       min-height: 0;
       overflow: hidden;
     }
@@ -297,7 +305,7 @@ import {
       overflow: auto;
       display: flex;
       flex-direction: column;
-      gap: 0.85rem;
+      gap: 0.65rem;
       padding-right: 0.25rem;
       position: relative;
       z-index: 1;
@@ -308,27 +316,29 @@ import {
     .slider-block strong,
     .toggle-row strong {
       display: block;
-      font-weight: 700;
-      font-size: 0.85rem;
-      margin-bottom: 0.35rem;
+      font-weight: 600;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
     }
 
     .input-group input,
     .size-row input,
     .type-name {
       width: 100%;
-      padding: 0.7rem 0.8rem;
-      border: 2px solid var(--border, #e1e5e9);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      background: var(--bg-card, #fff);
+      padding: 0.4rem 0.5rem;
+      border: 1px solid var(--rule, #111);
+      border-radius: 0;
+      font-size: 0.85rem;
+      background: var(--paper, #fff);
       color: inherit;
     }
 
     .size-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
+      gap: 0.6rem;
     }
 
     .section-head {
@@ -337,37 +347,36 @@ import {
       align-items: center;
     }
 
-    .section-head h2 {
-      margin: 0;
-      font-size: 1rem;
+    .rules-head {
+      margin-top: 0.25rem;
     }
 
     .type-card {
-      border: 2px solid var(--border, #e1e5e9);
-      border-radius: 10px;
-      padding: 0.75rem;
+      border: 1px solid var(--rule-soft, #b5b5b5);
+      border-radius: 0;
+      padding: 0.55rem;
       cursor: pointer;
       text-align: left;
-      background: var(--bg-muted, #f6f7fb);
+      background: var(--paper, #fff);
     }
 
     .type-card.selected {
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18);
+      border-color: var(--ink, #111);
+      background: var(--muted, #f3f3f3);
     }
 
     .type-top {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
       align-items: center;
-      margin-bottom: 0.55rem;
+      margin-bottom: 0.4rem;
     }
 
     .type-top input[type="color"] {
-      width: 2rem;
-      height: 2rem;
+      width: 1.6rem;
+      height: 1.6rem;
       padding: 0;
-      border: none;
+      border: 1px solid var(--rule, #111);
       background: none;
       cursor: pointer;
     }
@@ -376,21 +385,23 @@ import {
     .toggle-row small,
     .slider-block small {
       display: block;
-      color: var(--text-secondary, #666);
+      color: var(--ink-soft, #444);
       font-weight: 400;
       font-size: 0.75rem;
+      letter-spacing: 0;
+      text-transform: none;
       line-height: 1.35;
     }
 
     .slider-block,
     .toggle-row {
       display: flex;
-      gap: 0.55rem;
+      gap: 0.5rem;
       cursor: pointer;
     }
 
     .toggle-row.nested {
-      margin-left: 1.5rem;
+      margin-left: 1.25rem;
     }
 
     .slider-block {
@@ -408,26 +419,28 @@ import {
     .paint-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.4rem;
     }
 
     .preview-pane {
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.65rem;
+      gap: 0.4rem;
     }
 
     .preview-meta {
-      font-size: 0.8rem;
-      color: var(--text-secondary, #666);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-soft, #444);
     }
 
     .preview-scroll {
       overflow: auto;
-      background: var(--bg-canvas, #f8f9fb);
-      border: 1px solid var(--border, #e1e5e9);
-      border-radius: 10px;
+      background: var(--paper, #fff);
+      border: 1px solid var(--rule, #111);
+      border-radius: 0;
       flex: 1;
       min-height: 280px;
       min-width: 0;
@@ -442,7 +455,7 @@ import {
     }
 
     .splash-footer {
-      border-top: 1px solid var(--border, #e1e5e9);
+      border-top: 1px solid var(--rule, #111);
       justify-content: flex-end;
     }
 
@@ -451,38 +464,37 @@ import {
     }
 
     .btn {
-      border: none;
-      border-radius: 8px;
-      padding: 0.7rem 1rem;
+      border: 1px solid var(--ink, #111);
+      border-radius: 0;
+      padding: 0.4rem 0.65rem;
+      font-family: inherit;
       font-weight: 600;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       cursor: pointer;
+      background: var(--ink, #111);
+      color: var(--paper, #fff);
     }
 
     .btn:disabled {
-      opacity: 0.55;
+      opacity: 0.45;
       cursor: not-allowed;
     }
 
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-
     .btn-ghost {
-      background: transparent;
-      border: 2px solid var(--border, #d5d8e0);
-      color: inherit;
+      background: var(--paper, #fff);
+      color: var(--ink, #111);
     }
 
     .btn-small {
-      padding: 0.4rem 0.7rem;
-      font-size: 0.8rem;
-      background: #667eea;
-      color: white;
+      padding: 0.28rem 0.45rem;
+      font-size: 0.68rem;
     }
 
     .btn-danger {
-      background: #dc3545;
+      background: var(--paper, #fff);
+      color: var(--ink, #111);
     }
 
     @media (max-width: 1100px) {
@@ -491,6 +503,7 @@ import {
         overflow: auto;
       }
     }
+
   `]
 })
 export class GenerationSetupComponent implements AfterViewChecked, AfterViewInit, OnChanges {
@@ -813,7 +826,7 @@ export class GenerationSetupComponent implements AfterViewChecked, AfterViewInit
     this.ctx.stroke();
     this.ctx.setLineDash([]);
     this.ctx.fillStyle = isOffMap ? '#777' : '#111';
-    this.ctx.font = `${Math.max(8, Math.round(9 * this.previewScale / 0.55))}px Courier New`;
+    this.ctx.font = `${Math.max(8, Math.round(9 * this.previewScale / 0.55))}px "IBM Plex Mono", monospace`;
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.fillText(label, x, y);
