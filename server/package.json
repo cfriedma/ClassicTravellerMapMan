@@ -1,0 +1,10 @@
+{
+  "name": "classic-traveller-map-man-server",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}

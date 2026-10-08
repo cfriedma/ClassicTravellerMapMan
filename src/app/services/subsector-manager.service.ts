@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Subsector } from '../models/subsector';
 import { World } from '../models/world';
 import { SubsectorGenerator, ensureWorldBalkanStates } from '../features/worldgen/subsectorgenerator';
+import { KEY_VALUE_STORE, KeyValueStore } from '../storage/key-value-store';
 import { SettingsService } from './settings.service';
 import {
   cloneGenerationOptions,
@@ -36,9 +37,10 @@ export class SubsectorManagerService {
 
   private readonly STORAGE_KEY = 'traveller_subsectors';
 
-  constructor(private settings: SettingsService) {
-    this.loadSubsectors();
-  }
+  constructor(
+    private settings: SettingsService,
+    @Inject(KEY_VALUE_STORE) private store: KeyValueStore
+  ) {}
 
   get current(): SubsectorData | null {
     return this.currentSubsectorSubject.value;
@@ -113,7 +115,7 @@ export class SubsectorManagerService {
   }
 
   /**
-   * Writes the current in-memory subsector collection to localStorage.
+   * Writes the current in-memory subsector collection to storage.
    */
   persistCurrentSubsector(): void {
     const current = this.currentSubsectorSubject.value;
@@ -201,16 +203,17 @@ export class SubsectorManagerService {
   }
 
   /**
-   * Loads subsectors from localStorage
+   * Loads subsectors from storage. Called before the first screen is shown.
    */
-  private loadSubsectors(): void {
+  async hydrate(): Promise<void> {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (stored) {
-        const data = JSON.parse(stored);
-        const subsectors = data.map((item: any) => this.deserializeSubsectorData(item));
-        this.subsectorsSubject.next(subsectors);
+      const stored = await this.store.getItem(this.STORAGE_KEY);
+      if (!stored) {
+        return;
       }
+      const data = JSON.parse(stored);
+      const subsectors = data.map((item: any) => this.deserializeSubsectorData(item));
+      this.subsectorsSubject.next(subsectors);
     } catch (error) {
       console.error('Failed to load subsectors from storage:', error);
       this.subsectorsSubject.next([]);
@@ -218,7 +221,7 @@ export class SubsectorManagerService {
   }
 
   /**
-   * Saves current subsectors to localStorage
+   * Saves current subsectors to storage
    */
   private saveToStorage(): void {
     try {
@@ -228,7 +231,9 @@ export class SubsectorManagerService {
         generationOptions: cloneGenerationOptions(subsectorData.generationOptions),
         subsector: this.serializeSubsector(subsectorData.subsector)
       }));
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(serializableSubsectors));
+      void this.store.setItem(this.STORAGE_KEY, JSON.stringify(serializableSubsectors)).catch((error) => {
+        console.error('Failed to save subsectors to storage:', error);
+      });
     } catch (error) {
       console.error('Failed to save subsectors to storage:', error);
     }
@@ -386,6 +391,8 @@ export class SubsectorManagerService {
   clearAllSubsectors(): void {
     this.subsectorsSubject.next([]);
     this.currentSubsectorSubject.next(null);
-    localStorage.removeItem(this.STORAGE_KEY);
+    void this.store.removeItem(this.STORAGE_KEY).catch((error) => {
+      console.error('Failed to clear subsectors from storage:', error);
+    });
   }
 }

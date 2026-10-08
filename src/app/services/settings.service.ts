@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import {
   AppSettings,
@@ -7,21 +7,40 @@ import {
   normalizeAppSettings
 } from '../models/settings';
 import { cloneGenerationOptions } from '../models/generation-options';
+import { KEY_VALUE_STORE, KeyValueStore } from '../storage/key-value-store';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SettingsService {
   private readonly STORAGE_KEY = 'traveller_settings';
-  private readonly settingsSubject = new BehaviorSubject<AppSettings>(this.load());
+  private readonly settingsSubject = new BehaviorSubject<AppSettings>(
+    this.normalize({ ...DEFAULT_SETTINGS })
+  );
   readonly settings$ = this.settingsSubject.asObservable();
 
-  constructor() {
+  constructor(@Inject(KEY_VALUE_STORE) private store: KeyValueStore) {
     this.applyTheme(this.snapshot.theme);
   }
 
   get snapshot(): AppSettings {
     return this.settingsSubject.value;
+  }
+
+  async hydrate(): Promise<void> {
+    try {
+      const raw = await this.store.getItem(this.STORAGE_KEY);
+      if (!raw) {
+        this.applyTheme(this.snapshot.theme);
+        return;
+      }
+      const next = this.normalize({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
+      this.settingsSubject.next(next);
+      this.applyTheme(next.theme);
+    } catch (error) {
+      console.error('Failed to load settings from storage:', error);
+      this.applyTheme(this.snapshot.theme);
+    }
   }
 
   patch(partial: Partial<AppSettings>): void {
@@ -31,20 +50,10 @@ export class SettingsService {
     this.applyTheme(next.theme);
   }
 
-  private load(): AppSettings {
-    try {
-      const raw = localStorage.getItem(this.STORAGE_KEY);
-      if (!raw) {
-        return this.normalize({ ...DEFAULT_SETTINGS });
-      }
-      return this.normalize({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
-    } catch {
-      return this.normalize({ ...DEFAULT_SETTINGS });
-    }
-  }
-
   private save(settings: AppSettings): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(settings));
+    void this.store.setItem(this.STORAGE_KEY, JSON.stringify(settings)).catch((error) => {
+      console.error('Failed to save settings to storage:', error);
+    });
   }
 
   private normalize(settings: Partial<AppSettings> & Record<string, unknown>): AppSettings {
